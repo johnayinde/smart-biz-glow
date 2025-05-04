@@ -1,4 +1,5 @@
 
+import React, { useState } from 'react';
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { CreateInvoiceDialog } from "@/components/invoices/create-invoice-dialog";
 
 interface NavbarProps {
   title?: string;
@@ -20,10 +22,10 @@ interface NavbarProps {
 
 export function Navbar({ title = "Dashboard" }: NavbarProps) {
   const { user, logout } = useAuth();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const handleCreateInvoice = () => {
-    console.log("Create new invoice button clicked");
-    // Add your invoice creation logic here
+    setIsDialogOpen(true);
   };
 
   return (
@@ -82,6 +84,7 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
           </DropdownMenu>
         </div>
       </div>
+      <CreateInvoiceDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </header>
   );
 }

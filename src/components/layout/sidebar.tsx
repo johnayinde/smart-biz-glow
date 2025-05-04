@@ -30,18 +30,18 @@ export function Sidebar({ className }: SidebarProps) {
   ];
 
   return (
-    <div className={cn("pb-12 h-full flex flex-col bg-sidebar border-r", className)}>
+    <div className={cn("pb-12 h-full flex flex-col bg-sidebar border-r w-56", className)}>
       <div className="space-y-4 py-4 flex flex-col h-full">
-        <div className="px-4 py-2">
+        <div className="px-3 py-2">
           <div className="flex items-center gap-2 px-2">
-            <Layers className="h-6 w-6 text-sidebar-primary" />
-            <h2 className="text-lg font-semibold tracking-tight">
+            <Layers className="h-5 w-5 text-sidebar-primary" />
+            <h2 className="text-base font-semibold tracking-tight">
               SmartInvoice
             </h2>
           </div>
         </div>
         
-        <div className="px-3">
+        <div className="px-2">
           <div className="space-y-1">
             {navItems.map((item) => (
               <NavLink key={item.path} to={item.path}>
@@ -63,7 +63,7 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
         </div>
         
-        <div className="mt-auto px-3 py-2">
+        <div className="mt-auto px-2 py-2">
           <div className="space-y-1">
             <Button variant="ghost" size="sm" className="w-full justify-start">
               <Bell className="mr-2 h-4 w-4" />

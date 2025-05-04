@@ -6,9 +6,11 @@ import { ClientsTable } from "@/components/clients/clients-table";
 import { getMockData } from "@/services/mockData";
 import { Plus, Search, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreateClientDialog } from "@/components/clients/create-client-dialog";
 
 const Clients = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const clients = getMockData.clients();
   
   // Filter clients based on search query
@@ -19,8 +21,7 @@ const Clients = () => {
   );
   
   const handleNewClient = () => {
-    console.log("New client button clicked");
-    // Add your new client logic here
+    setIsDialogOpen(true);
   };
   
   return (
@@ -49,6 +50,8 @@ const Clients = () => {
       ) : (
         <EmptyState query={searchQuery} onAddClient={handleNewClient} />
       )}
+
+      <CreateClientDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </div>
   );
 };

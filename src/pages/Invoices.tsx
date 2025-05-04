@@ -7,9 +7,11 @@ import { getMockData } from "@/services/mockData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Plus, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreateInvoiceDialog } from "@/components/invoices/create-invoice-dialog";
 
 const Invoices = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const invoices = getMockData.invoices();
   
   // Filter invoices based on search query
@@ -25,8 +27,7 @@ const Invoices = () => {
   const overdueInvoices = getMockData.invoicesByStatus("overdue");
   
   const handleCreateInvoice = () => {
-    console.log("Create new invoice button clicked");
-    // Add your invoice creation logic here
+    setIsDialogOpen(true);
   };
   
   return (
@@ -90,6 +91,8 @@ const Invoices = () => {
           )} />
         </TabsContent>
       </Tabs>
+
+      <CreateInvoiceDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </div>
   );
 };
