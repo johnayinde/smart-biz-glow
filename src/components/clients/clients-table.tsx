@@ -26,6 +26,22 @@ interface ClientsTableProps {
 }
 
 export function ClientsTable({ clients }: ClientsTableProps) {
+  const handleViewDetails = (clientId: string) => {
+    console.log(`View details for client ${clientId}`);
+  };
+  
+  const handleEditClient = (clientId: string) => {
+    console.log(`Edit client ${clientId}`);
+  };
+  
+  const handleCreateInvoice = (clientId: string) => {
+    console.log(`Create invoice for client ${clientId}`);
+  };
+  
+  const handleDeleteClient = (clientId: string) => {
+    console.log(`Delete client ${clientId}`);
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -76,17 +92,20 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleViewDetails(client.id)}>
                       View details
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEditClient(client.id)}>
                       Edit client
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleCreateInvoice(client.id)}>
                       Create invoice
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem 
+                      className="text-destructive"
+                      onClick={() => handleDeleteClient(client.id)}
+                    >
                       Delete client
                     </DropdownMenuItem>
                   </DropdownMenuContent>

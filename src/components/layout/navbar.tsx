@@ -33,7 +33,7 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
 
           <Button variant="outline" size="sm" className="gap-1">
             <Plus className="h-4 w-4" />
-            New Invoice
+            <span>New Invoice</span>
           </Button>
 
           <ModeToggle />
@@ -57,13 +57,13 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/profile" className="w-full">Profile</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/settings" className="w-full">Settings</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/billing" className="w-full">Billing</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

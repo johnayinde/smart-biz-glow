@@ -18,6 +18,11 @@ const Clients = () => {
     (client.company && client.company.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   
+  const handleNewClient = () => {
+    console.log("New client button clicked");
+    // Add your new client logic here
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -33,7 +38,7 @@ const Clients = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button>
+          <Button onClick={handleNewClient}>
             <Plus className="mr-2 h-4 w-4" /> New Client
           </Button>
         </div>
@@ -42,13 +47,13 @@ const Clients = () => {
       {filteredClients.length > 0 ? (
         <ClientsTable clients={filteredClients} />
       ) : (
-        <EmptyState query={searchQuery} />
+        <EmptyState query={searchQuery} onAddClient={handleNewClient} />
       )}
     </div>
   );
 };
 
-const EmptyState = ({ query }: { query: string }) => (
+const EmptyState = ({ query, onAddClient }: { query: string; onAddClient: () => void }) => (
   <Card>
     <CardHeader>
       <CardTitle>No clients found</CardTitle>
@@ -61,7 +66,7 @@ const EmptyState = ({ query }: { query: string }) => (
       <p className="mt-4 text-center text-sm text-muted-foreground">
         {query ? "Try adjusting your search terms" : "You have not added any clients yet"}
       </p>
-      <Button className="mt-4">
+      <Button className="mt-4" onClick={onAddClient}>
         <Plus className="mr-2 h-4 w-4" /> Add Client
       </Button>
     </CardContent>
