@@ -12,12 +12,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavbarProps {
   title?: string;
 }
 
 export function Navbar({ title = "Dashboard" }: NavbarProps) {
+  const { user, logout } = useAuth();
+  
   const handleCreateInvoice = () => {
     console.log("Create new invoice button clicked");
     // Add your invoice creation logic here
@@ -48,16 +51,16 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/placeholder.svg" alt="@user" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarFallback>{user?.name ? user.name.charAt(0) + user.name.split(' ')[1]?.charAt(0) : 'JD'}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">John Doe</p>
+                  <p className="text-sm font-medium leading-none">{user?.name || 'John Doe'}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    john@example.com
+                    {user?.email || 'john@example.com'}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -72,7 +75,7 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
                 <Link to="/billing" className="w-full">Billing</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
