@@ -26,6 +26,22 @@ interface InvoicesTableProps {
 }
 
 export function InvoicesTable({ invoices }: InvoicesTableProps) {
+  const handleDownload = (invoiceId: string) => {
+    console.log(`Downloading invoice ${invoiceId}`);
+  };
+  
+  const handleEdit = (invoiceId: string) => {
+    console.log(`Editing invoice ${invoiceId}`);
+  };
+  
+  const handleMarkAsPaid = (invoiceId: string) => {
+    console.log(`Marking invoice ${invoiceId} as paid`);
+  };
+  
+  const handleDelete = (invoiceId: string) => {
+    console.log(`Deleting invoice ${invoiceId}`);
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -71,18 +87,21 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDownload(invoice.id)}>
                       <Download className="mr-2 h-4 w-4" />
                       Download
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEdit(invoice.id)}>
                       Edit invoice
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMarkAsPaid(invoice.id)}>
                       Mark as paid
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem 
+                      className="text-destructive"
+                      onClick={() => handleDelete(invoice.id)}
+                    >
                       Delete invoice
                     </DropdownMenuItem>
                   </DropdownMenuContent>

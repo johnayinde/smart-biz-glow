@@ -18,6 +18,11 @@ interface NavbarProps {
 }
 
 export function Navbar({ title = "Dashboard" }: NavbarProps) {
+  const handleCreateInvoice = () => {
+    console.log("Create new invoice button clicked");
+    // Add your invoice creation logic here
+  };
+
   return (
     <header className="sticky top-0 z-10 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between">
@@ -31,7 +36,7 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
             </Link>
           </Button>
 
-          <Button variant="outline" size="sm" className="gap-1">
+          <Button variant="outline" size="sm" className="gap-1" onClick={handleCreateInvoice}>
             <Plus className="h-4 w-4" />
             <span>New Invoice</span>
           </Button>

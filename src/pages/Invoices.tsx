@@ -24,6 +24,11 @@ const Invoices = () => {
   const paidInvoices = getMockData.invoicesByStatus("paid");
   const overdueInvoices = getMockData.invoicesByStatus("overdue");
   
+  const handleCreateInvoice = () => {
+    console.log("Create new invoice button clicked");
+    // Add your invoice creation logic here
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -39,7 +44,7 @@ const Invoices = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button>
+          <Button onClick={handleCreateInvoice}>
             <Plus className="mr-2 h-4 w-4" /> New Invoice
           </Button>
         </div>
@@ -57,7 +62,7 @@ const Invoices = () => {
           {filteredInvoices.length > 0 ? (
             <InvoicesTable invoices={filteredInvoices} />
           ) : (
-            <EmptyState query={searchQuery} />
+            <EmptyState query={searchQuery} onCreateInvoice={handleCreateInvoice} />
           )}
         </TabsContent>
         <TabsContent value="draft">
@@ -89,7 +94,7 @@ const Invoices = () => {
   );
 };
 
-const EmptyState = ({ query }: { query: string }) => (
+const EmptyState = ({ query, onCreateInvoice }: { query: string; onCreateInvoice: () => void }) => (
   <Card>
     <CardHeader>
       <CardTitle>No invoices found</CardTitle>
@@ -102,7 +107,7 @@ const EmptyState = ({ query }: { query: string }) => (
       <p className="mt-4 text-center text-sm text-muted-foreground">
         {query ? "Try adjusting your search terms" : "You have not created any invoices yet"}
       </p>
-      <Button className="mt-4">
+      <Button className="mt-4" onClick={onCreateInvoice}>
         <Plus className="mr-2 h-4 w-4" /> Create Invoice
       </Button>
     </CardContent>
