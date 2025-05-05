@@ -27,6 +27,9 @@ import { getMockData } from "@/services/mockData";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const lineItemSchema = z.object({
   description: z.string().min(1, "Description is required"),
@@ -41,6 +44,7 @@ const formSchema = z.object({
   issueDate: z.string().min(1, "Issue date is required"),
   dueDate: z.string().min(1, "Due date is required"),
   status: z.string().min(1, "Status is required"),
+  template: z.string().min(1, "Template is required"),
   lineItems: z.array(lineItemSchema).min(1, "At least one line item is required"),
   subtotal: z.string().optional(),
   taxRate: z.string().optional(),
@@ -56,6 +60,33 @@ interface CreateInvoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const invoiceTemplates = [
+  {
+    id: "standard",
+    name: "Standard",
+    description: "Classic business invoice with essential details",
+    previewImage: "https://placehold.co/120x80/e2e8f0/64748b?text=Standard&font=open-sans",
+  },
+  {
+    id: "modern",
+    name: "Modern",
+    description: "Contemporary design with improved readability",
+    previewImage: "https://placehold.co/120x80/f1f5f9/475569?text=Modern&font=open-sans",
+  },
+  {
+    id: "minimalist",
+    name: "Minimalist",
+    description: "Clean and simple with focus on content",
+    previewImage: "https://placehold.co/120x80/f8fafc/334155?text=Minimal&font=open-sans",
+  },
+  {
+    id: "professional",
+    name: "Professional",
+    description: "Detailed format for corporate requirements",
+    previewImage: "https://placehold.co/120x80/e0f2fe/0369a1?text=Pro&font=open-sans",
+  },
+];
 
 export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
   open,
@@ -84,6 +115,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
       issueDate: today,
       dueDate: dueDateString,
       status: "draft",
+      template: "standard",
       lineItems: [{ description: "", quantity: "1", rate: "0.00", amount: "0.00" }],
       subtotal: "0.00",
       taxRate: "0",
@@ -143,7 +175,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
     console.log("Creating invoice with:", values);
     toast({
       title: "Invoice Created",
-      description: `Invoice ${values.invoiceNumber} has been created.`,
+      description: `Invoice ${values.invoiceNumber} has been created using the ${values.template} template.`,
     });
     form.reset();
     onOpenChange(false);
@@ -248,6 +280,62 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
                 )}
               />
             </div>
+
+            <Separator />
+
+            <FormField
+              control={form.control}
+              name="template"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Invoice Template</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+                    >
+                      {invoiceTemplates.map((template) => (
+                        <Card 
+                          key={template.id}
+                          className={cn(
+                            "cursor-pointer hover:border-primary transition-colors",
+                            field.value === template.id ? "border-2 border-primary" : ""
+                          )}
+                          onClick={() => field.onChange(template.id)}
+                        >
+                          <CardContent className="p-3 flex flex-col items-center text-center">
+                            <div className="relative">
+                              <img 
+                                src={template.previewImage} 
+                                alt={template.name} 
+                                className="rounded mb-2 border" 
+                              />
+                              <div className="absolute top-2 right-2">
+                                <RadioGroupItem 
+                                  value={template.id} 
+                                  id={template.id} 
+                                  className="sr-only" 
+                                />
+                                <div className={cn(
+                                  "h-4 w-4 rounded-full border border-primary",
+                                  field.value === template.id ? "bg-primary" : "bg-background"
+                                )} />
+                              </div>
+                            </div>
+                            <div className="font-medium text-sm">{template.name}</div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {template.description}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <Separator />
             
