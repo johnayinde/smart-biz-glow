@@ -1,9 +1,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpRight, CreditCard, DollarSign } from "lucide-react";
+import { ArrowUpRight, CreditCard, DollarSign, Download, Eye, FileText } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 // Mock payment data
 const mockPayments = [
@@ -14,7 +20,11 @@ const mockPayments = [
     status: "completed",
     method: "Credit Card",
     client: "Acme Corporation",
-    invoice: "INV-001"
+    invoice: "INV-001",
+    cardLast4: "4242",
+    cardType: "Visa",
+    reference: "REF-2023-001",
+    description: "Monthly subscription payment"
   },
   {
     id: "2",
@@ -23,7 +33,11 @@ const mockPayments = [
     status: "completed",
     method: "Bank Transfer",
     client: "Wayne Enterprises",
-    invoice: "INV-004"
+    invoice: "INV-004",
+    accountName: "Wayne Enterprises Inc.",
+    accountNumber: "XXXX-9876",
+    reference: "REF-2023-002",
+    description: "Website development services"
   },
   {
     id: "3",
@@ -32,7 +46,11 @@ const mockPayments = [
     status: "pending",
     method: "Credit Card",
     client: "Stark Innovations",
-    invoice: "INV-003"
+    invoice: "INV-003",
+    cardLast4: "1234",
+    cardType: "Mastercard",
+    reference: "REF-2023-003",
+    description: "Consulting services for Q1"
   }
 ];
 
@@ -41,12 +59,32 @@ type PaymentMethod = "stripe" | "paystack" | "bank_transfer";
 const Payments = () => {
   const [activeTab, setActiveTab] = useState<"history" | "settings">("history");
   const [activePaymentMethod, setActivePaymentMethod] = useState<PaymentMethod>("stripe");
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false);
+
+  const handleViewPaymentDetails = (payment: any) => {
+    setSelectedPayment(payment);
+    setIsDetailsOpen(true);
+  };
+
+  const handleDownloadReceipt = (paymentId: string) => {
+    // In a real app, this would generate and download a PDF receipt
+    toast({
+      title: "Receipt Downloaded",
+      description: `Receipt for payment #${paymentId} has been downloaded.`,
+    });
+  };
+
+  const handleRecordPayment = () => {
+    setIsNewPaymentOpen(true);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Payments</h2>
-        <Button>
+        <Button onClick={handleRecordPayment}>
           <DollarSign className="mr-2 h-4 w-4" />
           Record Payment
         </Button>
@@ -77,6 +115,7 @@ const Payments = () => {
                       <th className="py-3 px-4 text-left">Method</th>
                       <th className="py-3 px-4 text-right">Amount</th>
                       <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -106,6 +145,28 @@ const Payments = () => {
                           >
                             {payment.status === "completed" ? "Completed" : "Pending"}
                           </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex justify-center space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleViewPaymentDetails(payment)}
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {payment.status === "completed" && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleDownloadReceipt(payment.id)}
+                                title="Download Receipt"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -204,7 +265,262 @@ const Payments = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Payment Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Payment Details</DialogTitle>
+            <DialogDescription>
+              Transaction information for payment #{selectedPayment?.id}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedPayment && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-medium">{selectedPayment.client}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedPayment.invoice}</p>
+                </div>
+                <Badge variant={selectedPayment.status === "completed" ? "success" : "warning"}>
+                  {selectedPayment.status === "completed" ? "Completed" : "Pending"}
+                </Badge>
+              </div>
+              
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Date</p>
+                  <p>{format(new Date(selectedPayment.date), "MMM d, yyyy")}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Amount</p>
+                  <p className="font-medium">${selectedPayment.amount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
+                  <p>{selectedPayment.method}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Reference</p>
+                  <p>{selectedPayment.reference}</p>
+                </div>
+                {selectedPayment.cardLast4 && (
+                  <>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Card Type</p>
+                      <p>{selectedPayment.cardType}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Card</p>
+                      <p>**** **** **** {selectedPayment.cardLast4}</p>
+                    </div>
+                  </>
+                )}
+                {selectedPayment.accountNumber && (
+                  <>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Account Name</p>
+                      <p>{selectedPayment.accountName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Account Number</p>
+                      <p>{selectedPayment.accountNumber}</p>
+                    </div>
+                  </>
+                )}
+                <div className="col-span-2">
+                  <p className="text-sm font-medium text-muted-foreground">Description</p>
+                  <p>{selectedPayment.description}</p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                {selectedPayment.status === "completed" && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleDownloadReceipt(selectedPayment.id)}
+                    className="flex items-center"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Receipt
+                  </Button>
+                )}
+                <Button 
+                  variant="default" 
+                  onClick={() => setIsDetailsOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Record New Payment Sheet */}
+      <Sheet open={isNewPaymentOpen} onOpenChange={setIsNewPaymentOpen}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Record New Payment</SheetTitle>
+            <SheetDescription>
+              Add details for a new payment received from a client
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="space-y-4 py-4">
+            <RecordPaymentForm onClose={() => setIsNewPaymentOpen(false)} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
+  );
+};
+
+// Create the RecordPaymentForm component
+const RecordPaymentForm = ({ onClose }: { onClose: () => void }) => {
+  const [formData, setFormData] = useState({
+    client: "",
+    invoice: "",
+    amount: "",
+    date: format(new Date(), "yyyy-MM-dd"),
+    method: "Credit Card",
+    reference: "",
+    description: ""
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, this would submit to your backend
+    toast({
+      title: "Payment Recorded",
+      description: `Payment of $${formData.amount} from ${formData.client} has been recorded.`,
+    });
+    onClose();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <label htmlFor="client" className="text-sm font-medium">Client</label>
+        <input
+          id="client"
+          name="client"
+          type="text"
+          className="w-full rounded-md border border-input px-3 py-2"
+          value={formData.client}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <label htmlFor="invoice" className="text-sm font-medium">Invoice Number</label>
+        <input
+          id="invoice"
+          name="invoice"
+          type="text"
+          className="w-full rounded-md border border-input px-3 py-2"
+          value={formData.invoice}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <label htmlFor="amount" className="text-sm font-medium">Amount ($)</label>
+        <input
+          id="amount"
+          name="amount"
+          type="number"
+          min="0"
+          step="0.01"
+          className="w-full rounded-md border border-input px-3 py-2"
+          value={formData.amount}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <label htmlFor="date" className="text-sm font-medium">Payment Date</label>
+        <input
+          id="date"
+          name="date"
+          type="date"
+          className="w-full rounded-md border border-input px-3 py-2"
+          value={formData.date}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <label htmlFor="method" className="text-sm font-medium">Payment Method</label>
+        <select
+          id="method"
+          name="method"
+          className="w-full rounded-md border border-input px-3 py-2"
+          value={formData.method}
+          onChange={handleChange as any}
+          required
+        >
+          <option>Credit Card</option>
+          <option>Bank Transfer</option>
+          <option>PayPal</option>
+          <option>Cash</option>
+          <option>Check</option>
+        </select>
+      </div>
+      
+      <div className="space-y-2">
+        <label htmlFor="reference" className="text-sm font-medium">Reference Number</label>
+        <input
+          id="reference"
+          name="reference"
+          type="text"
+          className="w-full rounded-md border border-input px-3 py-2"
+          value={formData.reference}
+          onChange={handleChange}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <label htmlFor="description" className="text-sm font-medium">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          className="w-full rounded-md border border-input px-3 py-2"
+          rows={3}
+          value={formData.description}
+          onChange={handleChange}
+        />
+      </div>
+      
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button 
+          variant="outline" 
+          type="button"
+          onClick={onClose}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit"
+          className="flex items-center"
+        >
+          <DollarSign className="mr-2 h-4 w-4" />
+          Record Payment
+        </Button>
+      </div>
+    </form>
   );
 };
 
