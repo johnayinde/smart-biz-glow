@@ -12,10 +12,12 @@ import { PublicRoute } from "@/components/auth/PublicRoute";
 import Dashboard from "./pages/Dashboard";
 import Invoices from "./pages/Invoices";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
 import Payments from "./pages/Payments";
 import Analytics from "./pages/Analytics";
 import Insights from "./pages/Insights";
 import Settings from "./pages/Settings";
+import Notifications from "./pages/Notifications";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import PasswordReset from "./pages/auth/PasswordReset";
@@ -45,10 +47,12 @@ const App = () => (
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/invoices" element={<Invoices />} />
                   <Route path="/clients" element={<Clients />} />
+                  <Route path="/clients/:id" element={<ClientDetail />} />
                   <Route path="/payments" element={<Payments />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/insights" element={<Insights />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/notifications" element={<Notifications />} />
                 </Route>
               </Route>
               
