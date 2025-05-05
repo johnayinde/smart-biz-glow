@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,10 +25,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getMockData } from "@/services/mockData";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash } from "lucide-react";
+import { Eye, Plus, Printer, Trash } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const lineItemSchema = z.object({
   description: z.string().min(1, "Description is required"),
@@ -93,6 +93,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
   onOpenChange,
 }) => {
   const clients = getMockData.clients();
+  const [previewOpen, setPreviewOpen] = useState(false);
   
   // Generate a random invoice number
   const generateInvoiceNumber = () => {
@@ -169,6 +170,98 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
     
     form.setValue(`lineItems.${index}.amount`, amount);
     calculateTotals();
+  };
+
+  // Generate a preview of the selected template
+  const generatePreview = () => {
+    const values = form.getValues();
+    const selectedTemplate = invoiceTemplates.find(t => t.id === values.template);
+    const selectedClient = clients.find(c => c.id.toString() === values.clientId);
+    
+    return (
+      <div className="p-4 max-w-[600px] border rounded-md bg-white">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h2 className="text-xl font-bold">{selectedTemplate?.name} Template</h2>
+            <p className="text-muted-foreground text-sm">Invoice #{values.invoiceNumber}</p>
+          </div>
+          <div className="text-right">
+            <p className="font-medium">Date: {values.issueDate}</p>
+            <p className="text-sm">Due: {values.dueDate}</p>
+            <p className="mt-1 text-xs px-2 py-1 rounded bg-gray-100 inline-block">
+              {values.status.toUpperCase()}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex justify-between mb-6">
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">From:</p>
+            <p className="font-medium">Your Company</p>
+            <p className="text-sm">123 Business St</p>
+            <p className="text-sm">contact@example.com</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground mb-1">Bill To:</p>
+            <p className="font-medium">{selectedClient?.name || "Select a client"}</p>
+            {selectedClient && (
+              <>
+                <p className="text-sm">{selectedClient.company}</p>
+                <p className="text-sm">{selectedClient.email}</p>
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div className="border rounded mb-4">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr className="border-b">
+                <th className="text-left p-2">Description</th>
+                <th className="text-right p-2 w-16">Qty</th>
+                <th className="text-right p-2 w-24">Rate</th>
+                <th className="text-right p-2 w-24">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {values.lineItems.map((item, i) => (
+                <tr key={i} className="border-b">
+                  <td className="p-2">{item.description || "Item description"}</td>
+                  <td className="p-2 text-right">{item.quantity}</td>
+                  <td className="p-2 text-right">${item.rate}</td>
+                  <td className="p-2 text-right">${item.amount || "0.00"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="flex justify-end">
+          <div className="w-48">
+            <div className="flex justify-between mb-1">
+              <span>Subtotal:</span>
+              <span>${values.subtotal}</span>
+            </div>
+            <div className="flex justify-between mb-1">
+              <span>Tax ({values.taxRate}%):</span>
+              <span>${values.taxAmount}</span>
+            </div>
+            <div className="flex justify-between font-bold">
+              <span>Total:</span>
+              <span>${values.total}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-6 pt-4 border-t text-sm">
+          <p className="font-medium mb-2">Notes:</p>
+          <p className="text-muted-foreground">{values.notes || "No notes provided."}</p>
+          
+          <p className="font-medium mb-2 mt-4">Terms & Conditions:</p>
+          <p className="text-muted-foreground">{values.terms}</p>
+        </div>
+      </div>
+    );
   };
 
   const onSubmit = (values: FormValues) => {
@@ -283,59 +376,92 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
 
             <Separator />
 
-            <FormField
-              control={form.control}
-              name="template"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Invoice Template</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-                    >
-                      {invoiceTemplates.map((template) => (
-                        <Card 
-                          key={template.id}
-                          className={cn(
-                            "cursor-pointer hover:border-primary transition-colors",
-                            field.value === template.id ? "border-2 border-primary" : ""
-                          )}
-                          onClick={() => field.onChange(template.id)}
-                        >
-                          <CardContent className="p-3 flex flex-col items-center text-center">
-                            <div className="relative">
-                              <img 
-                                src={template.previewImage} 
-                                alt={template.name} 
-                                className="rounded mb-2 border" 
-                              />
-                              <div className="absolute top-2 right-2">
-                                <RadioGroupItem 
-                                  value={template.id} 
-                                  id={template.id} 
-                                  className="sr-only" 
+            <div className="flex justify-between items-center">
+              <FormField
+                control={form.control}
+                name="template"
+                render={({ field }) => (
+                  <FormItem className="space-y-3 flex-1">
+                    <FormLabel>Invoice Template</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+                      >
+                        {invoiceTemplates.map((template) => (
+                          <Card 
+                            key={template.id}
+                            className={cn(
+                              "cursor-pointer hover:border-primary transition-colors",
+                              field.value === template.id ? "border-2 border-primary" : ""
+                            )}
+                            onClick={() => field.onChange(template.id)}
+                          >
+                            <CardContent className="p-3 flex flex-col items-center text-center">
+                              <div className="relative">
+                                <img 
+                                  src={template.previewImage} 
+                                  alt={template.name} 
+                                  className="rounded mb-2 border" 
                                 />
-                                <div className={cn(
-                                  "h-4 w-4 rounded-full border border-primary",
-                                  field.value === template.id ? "bg-primary" : "bg-background"
-                                )} />
+                                <div className="absolute top-2 right-2">
+                                  <RadioGroupItem 
+                                    value={template.id} 
+                                    id={template.id} 
+                                    className="sr-only" 
+                                  />
+                                  <div className={cn(
+                                    "h-4 w-4 rounded-full border border-primary",
+                                    field.value === template.id ? "bg-primary" : "bg-background"
+                                  )} />
+                                </div>
                               </div>
-                            </div>
-                            <div className="font-medium text-sm">{template.name}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {template.description}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                              <div className="font-medium text-sm">{template.name}</div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {template.description}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Popover open={previewOpen} onOpenChange={setPreviewOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="gap-2 mt-6"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Preview Invoice
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-[650px] p-0" 
+                  align="end"
+                >
+                  {generatePreview()}
+                  <div className="p-2 border-t flex justify-end">
+                    <Button 
+                      type="button" 
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                      onClick={() => setPreviewOpen(false)}
+                    >
+                      <Printer className="h-4 w-4" />
+                      Print Preview
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
 
             <Separator />
             
