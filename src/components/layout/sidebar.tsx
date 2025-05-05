@@ -30,7 +30,7 @@ export function Sidebar({ className }: SidebarProps) {
   ];
 
   return (
-    <div className={cn("pb-12 h-full flex flex-col bg-sidebar border-r w-56", className)}>
+    <div className={cn("pb-12 h-full flex flex-col bg-sidebar border-r w-48", className)}>
       <div className="space-y-4 py-4 flex flex-col h-full">
         <div className="px-3 py-2">
           <div className="flex items-center gap-2 px-2">
