@@ -47,8 +47,20 @@ export interface Client {
   name: string;
   email: string;
   phone: string;
-  address: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    zip: string;
+    country: string;
+  };
   company?: string;
+  website?: string;
+  taxId?: string;
+  notes?: string;
+  contactType?: string;
+  paymentTerms?: string;
   createdAt: string;
   totalBilled: number;
   status: 'active' | 'inactive';
@@ -94,8 +106,20 @@ export const clients: Client[] = [
     name: 'Acme Corporation',
     email: 'billing@acme.com',
     phone: '(555) 123-4567',
-    address: '123 Business St, Tech City, 90210',
+    address: {
+      street: '123 Business St',
+      city: 'Tech City',
+      state: 'CA',
+      postalCode: '90210',
+      zip: '90210',
+      country: 'USA'
+    },
     company: 'Acme Corp',
+    website: 'https://acme.example.com',
+    taxId: 'AC-12345',
+    notes: 'Priority client',
+    contactType: 'business',
+    paymentTerms: 'net30',
     createdAt: '2023-01-15',
     totalBilled: 12500,
     status: 'active'
@@ -105,8 +129,20 @@ export const clients: Client[] = [
     name: 'Globex Industries',
     email: 'accounts@globex.com',
     phone: '(555) 987-6543',
-    address: '456 Corporate Ave, Business Park, 60601',
+    address: {
+      street: '456 Corporate Ave',
+      city: 'Business Park',
+      state: 'IL',
+      postalCode: '60601',
+      zip: '60601',
+      country: 'USA'
+    },
     company: 'Globex Inc',
+    website: 'https://globex.example.com',
+    taxId: 'GLX-54321',
+    notes: 'Requires paper invoices',
+    contactType: 'business',
+    paymentTerms: 'net15',
     createdAt: '2023-02-20',
     totalBilled: 8750,
     status: 'active'
@@ -116,8 +152,20 @@ export const clients: Client[] = [
     name: 'Stark Innovations',
     email: 'payments@stark.com',
     phone: '(555) 111-2222',
-    address: '789 Innovation Blvd, Tech Valley, 10001',
+    address: {
+      street: '789 Innovation Blvd',
+      city: 'Tech Valley',
+      state: 'NY',
+      postalCode: '10001',
+      zip: '10001',
+      country: 'USA'
+    },
     company: 'Stark Industries',
+    website: 'https://stark.example.com',
+    taxId: 'STK-78901',
+    notes: 'Premium client',
+    contactType: 'business',
+    paymentTerms: 'net30',
     createdAt: '2023-03-10',
     totalBilled: 21000,
     status: 'active'
@@ -127,8 +175,20 @@ export const clients: Client[] = [
     name: 'Wayne Enterprises',
     email: 'finance@wayne.com',
     phone: '(555) 333-4444',
-    address: '1007 Gotham Road, Gotham City, 80808',
+    address: {
+      street: '1007 Gotham Road',
+      city: 'Gotham City',
+      state: 'NJ',
+      postalCode: '80808',
+      zip: '80808',
+      country: 'USA'
+    },
     company: 'Wayne Corp',
+    website: 'https://wayne.example.com',
+    taxId: 'WE-24680',
+    notes: 'Pay on time',
+    contactType: 'business',
+    paymentTerms: 'net60',
     createdAt: '2023-04-05',
     totalBilled: 15250,
     status: 'inactive'
@@ -138,8 +198,20 @@ export const clients: Client[] = [
     name: 'Initech LLC',
     email: 'billing@initech.com',
     phone: '(555) 555-5555',
-    address: '101 Office Space Ln, Corporate Park, 30301',
+    address: {
+      street: '101 Office Space Ln',
+      city: 'Corporate Park',
+      state: 'GA',
+      postalCode: '30301',
+      zip: '30301',
+      country: 'USA'
+    },
     company: 'Initech',
+    website: 'https://initech.example.com',
+    taxId: 'INT-13579',
+    notes: 'New client',
+    contactType: 'business',
+    paymentTerms: 'immediate',
     createdAt: '2023-05-12',
     totalBilled: 6500,
     status: 'active'
@@ -387,6 +459,14 @@ export const getMockData = {
   
   getClient: (clientId: string) => {
     return clients.find(client => client.id === clientId);
+  },
+  
+  clientById: (clientId: string) => {
+    return clients.find(client => client.id === clientId);
+  },
+  
+  invoicesByClientId: (clientId: string) => {
+    return invoices.filter(invoice => invoice.clientId === clientId);
   },
   
   getInvoice: (invoiceId: string) => {
