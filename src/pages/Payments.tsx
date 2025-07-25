@@ -283,7 +283,7 @@ const Payments = () => {
                   <h3 className="text-lg font-medium">{selectedPayment.client}</h3>
                   <p className="text-sm text-muted-foreground">{selectedPayment.invoice}</p>
                 </div>
-                <Badge variant={selectedPayment.status === "completed" ? "success" : "warning"}>
+                <Badge variant={selectedPayment.status === "completed" ? "default" : "secondary"}>
                   {selectedPayment.status === "completed" ? "Completed" : "Pending"}
                 </Badge>
               </div>

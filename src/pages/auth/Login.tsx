@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Layers, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -27,6 +28,7 @@ const formSchema = z.object({
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,22 +38,13 @@ export default function Login() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("Login attempt with:", values);
-    
-    // Simulate successful login
-    toast({
-      title: "Logged in successfully",
-      description: "Welcome back to SmartInvoice!",
-    });
-    
-    // In a real app, you would validate credentials with your backend
-    // and store the auth token in localStorage or a secure cookie
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("user", JSON.stringify({ email: values.email, name: "John Doe" }));
-    
-    // Redirect to the dashboard
-    navigate("/");
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await login(values.email, values.password);
+    } catch (error) {
+      // Error handling is done in the AuthContext
+      console.error("Login error:", error);
+    }
   }
 
   return (
