@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpRight, CreditCard, DollarSign, Download, Eye, FileText } from "lucide-react";
+import { ArrowUpRight, CreditCard, DollarSign, Download, Eye, FileText, AlertTriangle, Clock, Send } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { invoices } from "@/services/mockData";
 
 // Mock payment data
 const mockPayments = [
@@ -57,11 +58,19 @@ const mockPayments = [
 type PaymentMethod = "stripe" | "paystack" | "bank_transfer";
 
 const Payments = () => {
-  const [activeTab, setActiveTab] = useState<"history" | "settings">("history");
+  const [activeTab, setActiveTab] = useState<"history" | "unpaid" | "settings">("history");
   const [activePaymentMethod, setActivePaymentMethod] = useState<PaymentMethod>("stripe");
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false);
+
+  // Get unpaid invoices (pending and overdue)
+  const unpaidInvoices = invoices.filter(invoice => 
+    invoice.status === 'pending' || invoice.status === 'overdue'
+  );
+
+  const overdueInvoices = invoices.filter(invoice => invoice.status === 'overdue');
+  const pendingInvoices = invoices.filter(invoice => invoice.status === 'pending');
 
   const handleViewPaymentDetails = (payment: any) => {
     setSelectedPayment(payment);
@@ -80,6 +89,13 @@ const Payments = () => {
     setIsNewPaymentOpen(true);
   };
 
+  const handleSendReminder = (invoiceId: string) => {
+    toast({
+      title: "Reminder Sent",
+      description: `Payment reminder has been sent for invoice #${invoiceId}.`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -90,11 +106,173 @@ const Payments = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="history" onValueChange={(value) => setActiveTab(value as any)}>
+      <Tabs defaultValue="unpaid" onValueChange={(value) => setActiveTab(value as any)}>
         <TabsList>
+          <TabsTrigger value="unpaid">
+            Unpaid Invoices
+            {unpaidInvoices.length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {unpaidInvoices.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="history">Payment History</TabsTrigger>
           <TabsTrigger value="settings">Payment Settings</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="unpaid" className="space-y-4">
+          {overdueInvoices.length > 0 && (
+            <Card className="border-destructive">
+              <CardHeader>
+                <CardTitle className="flex items-center text-destructive">
+                  <AlertTriangle className="mr-2 h-5 w-5" />
+                  Overdue Invoices ({overdueInvoices.length})
+                </CardTitle>
+                <CardDescription>
+                  These invoices are past their due date and require immediate attention
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50 text-muted-foreground">
+                        <th className="py-3 px-4 text-left">Invoice</th>
+                        <th className="py-3 px-4 text-left">Client</th>
+                        <th className="py-3 px-4 text-left">Due Date</th>
+                        <th className="py-3 px-4 text-right">Amount</th>
+                        <th className="py-3 px-4 text-center">Days Overdue</th>
+                        <th className="py-3 px-4 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {overdueInvoices.map((invoice) => {
+                        const daysOverdue = Math.ceil((new Date().getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 3600 * 24));
+                        return (
+                          <tr key={invoice.id} className="border-b">
+                            <td className="py-3 px-4 font-medium">{invoice.invoiceNumber}</td>
+                            <td className="py-3 px-4">{invoice.clientName}</td>
+                            <td className="py-3 px-4">
+                              {new Date(invoice.dueDate).toLocaleDateString()}
+                            </td>
+                            <td className="py-3 px-4 text-right font-medium">
+                              ${invoice.total.toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <Badge variant="destructive">{daysOverdue} days</Badge>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <div className="flex justify-center space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleSendReminder(invoice.invoiceNumber)}
+                                >
+                                  <Send className="mr-1 h-3 w-3" />
+                                  Send Reminder
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  title="View Invoice"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {pendingInvoices.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Clock className="mr-2 h-5 w-5 text-orange-500" />
+                  Pending Invoices ({pendingInvoices.length})
+                </CardTitle>
+                <CardDescription>
+                  These invoices are awaiting payment
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50 text-muted-foreground">
+                        <th className="py-3 px-4 text-left">Invoice</th>
+                        <th className="py-3 px-4 text-left">Client</th>
+                        <th className="py-3 px-4 text-left">Due Date</th>
+                        <th className="py-3 px-4 text-right">Amount</th>
+                        <th className="py-3 px-4 text-center">Days Until Due</th>
+                        <th className="py-3 px-4 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingInvoices.map((invoice) => {
+                        const daysUntilDue = Math.ceil((new Date(invoice.dueDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+                        return (
+                          <tr key={invoice.id} className="border-b">
+                            <td className="py-3 px-4 font-medium">{invoice.invoiceNumber}</td>
+                            <td className="py-3 px-4">{invoice.clientName}</td>
+                            <td className="py-3 px-4">
+                              {new Date(invoice.dueDate).toLocaleDateString()}
+                            </td>
+                            <td className="py-3 px-4 text-right font-medium">
+                              ${invoice.total.toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <Badge variant={daysUntilDue <= 3 ? "destructive" : "secondary"}>
+                                {daysUntilDue > 0 ? `${daysUntilDue} days` : "Due today"}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <div className="flex justify-center space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleSendReminder(invoice.invoiceNumber)}
+                                >
+                                  <Send className="mr-1 h-3 w-3" />
+                                  Send Reminder
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  title="View Invoice"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {unpaidInvoices.length === 0 && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">All caught up!</h3>
+                <p className="text-muted-foreground text-center">
+                  You don't have any unpaid invoices at the moment.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
         
         <TabsContent value="history" className="space-y-4">
           <Card>

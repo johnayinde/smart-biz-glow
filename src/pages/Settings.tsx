@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { currentUser } from "@/services/mockData";
 import { useState } from "react";
 
@@ -17,6 +18,16 @@ const Settings = () => {
     invoice: true,
     payment: true,
     system: false
+  });
+
+  const [reminderSettings, setReminderSettings] = useState({
+    enableReminders: true,
+    reminderInterval: "3", // days
+    overdueReminderInterval: "7", // days
+    maxReminders: "3",
+    enableOverdueReminders: true,
+    sendOnDueDate: true,
+    reminderTemplate: "friendly"
   });
   
   const user = currentUser;
@@ -31,10 +42,11 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue={activeTab} onValueChange={(value) => setActiveTab(value)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-5">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="company">Company</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="reminders">Reminders</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
         </TabsList>
         
@@ -271,6 +283,175 @@ const Settings = () => {
             </CardContent>
             <CardFooter className="flex justify-end">
               <Button>Save Preferences</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="reminders" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Reminder Settings</CardTitle>
+              <CardDescription>
+                Configure automatic reminders for unpaid invoices
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Enable Payment Reminders</p>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically send reminders for unpaid invoices
+                  </p>
+                </div>
+                <Switch 
+                  checked={reminderSettings.enableReminders}
+                  onCheckedChange={(checked) => 
+                    setReminderSettings({...reminderSettings, enableReminders: checked})
+                  } 
+                />
+              </div>
+
+              {reminderSettings.enableReminders && (
+                <>
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium mb-4">Reminder Schedule</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Send Reminder on Due Date</p>
+                          <p className="text-sm text-muted-foreground">
+                            Send a reminder on the invoice due date
+                          </p>
+                        </div>
+                        <Switch 
+                          checked={reminderSettings.sendOnDueDate}
+                          onCheckedChange={(checked) => 
+                            setReminderSettings({...reminderSettings, sendOnDueDate: checked})
+                          }
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="reminder-interval">Reminder Interval (days)</Label>
+                          <Select 
+                            value={reminderSettings.reminderInterval} 
+                            onValueChange={(value) => 
+                              setReminderSettings({...reminderSettings, reminderInterval: value})
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">Daily</SelectItem>
+                              <SelectItem value="3">Every 3 days</SelectItem>
+                              <SelectItem value="7">Weekly</SelectItem>
+                              <SelectItem value="14">Every 2 weeks</SelectItem>
+                              <SelectItem value="30">Monthly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="max-reminders">Maximum Reminders</Label>
+                          <Select 
+                            value={reminderSettings.maxReminders} 
+                            onValueChange={(value) => 
+                              setReminderSettings({...reminderSettings, maxReminders: value})
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1 reminder</SelectItem>
+                              <SelectItem value="2">2 reminders</SelectItem>
+                              <SelectItem value="3">3 reminders</SelectItem>
+                              <SelectItem value="5">5 reminders</SelectItem>
+                              <SelectItem value="unlimited">Unlimited</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium mb-4">Overdue Settings</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Enable Overdue Reminders</p>
+                          <p className="text-sm text-muted-foreground">
+                            Send additional reminders for overdue invoices
+                          </p>
+                        </div>
+                        <Switch 
+                          checked={reminderSettings.enableOverdueReminders}
+                          onCheckedChange={(checked) => 
+                            setReminderSettings({...reminderSettings, enableOverdueReminders: checked})
+                          }
+                        />
+                      </div>
+
+                      {reminderSettings.enableOverdueReminders && (
+                        <div className="space-y-2">
+                          <Label htmlFor="overdue-interval">Overdue Reminder Interval</Label>
+                          <Select 
+                            value={reminderSettings.overdueReminderInterval} 
+                            onValueChange={(value) => 
+                              setReminderSettings({...reminderSettings, overdueReminderInterval: value})
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">Daily</SelectItem>
+                              <SelectItem value="3">Every 3 days</SelectItem>
+                              <SelectItem value="7">Weekly</SelectItem>
+                              <SelectItem value="14">Every 2 weeks</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium mb-4">Reminder Template</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="reminder-template">Reminder Tone</Label>
+                      <Select 
+                        value={reminderSettings.reminderTemplate} 
+                        onValueChange={(value) => 
+                          setReminderSettings({...reminderSettings, reminderTemplate: value})
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="friendly">Friendly</SelectItem>
+                          <SelectItem value="professional">Professional</SelectItem>
+                          <SelectItem value="firm">Firm</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">
+                        Choose the tone for your reminder emails
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button>Save Reminder Settings</Button>
             </CardFooter>
           </Card>
         </TabsContent>
