@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { InvoicesTable } from "@/components/invoices/invoices-table";
 import { getMockData } from "@/services/mockData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Plus, Search } from "lucide-react";
+import { FileText, Plus, Search, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateInvoiceDialog } from "@/components/invoices/create-invoice-dialog";
 
@@ -45,6 +46,11 @@ const Invoices = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <Button variant="outline" asChild>
+            <Link to="/invoice-templates">
+              <Settings className="mr-2 h-4 w-4" /> Templates
+            </Link>
+          </Button>
           <Button onClick={handleCreateInvoice}>
             <Plus className="mr-2 h-4 w-4" /> New Invoice
           </Button>

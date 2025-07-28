@@ -47,6 +47,7 @@ export function Sidebar({ className }: SidebarProps) {
   const navItems = [
     { name: "Dashboard", icon: Home, path: "/" },
     { name: "Invoices", icon: FileText, path: "/invoices" },
+    { name: "Templates", icon: Layers, path: "/invoice-templates" },
     { name: "Clients", icon: Users, path: "/clients" },
     { name: "Payments", icon: Wallet, path: "/payments" },
     { name: "Analytics", icon: BarChart3, path: "/analytics" },

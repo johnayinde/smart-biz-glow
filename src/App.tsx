@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
 import Dashboard from "./pages/Dashboard";
 import Invoices from "./pages/Invoices";
+import InvoiceTemplates from "./pages/InvoiceTemplates";
 import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
 import Payments from "./pages/Payments";
@@ -46,6 +47,7 @@ const App = () => (
                 <Route element={<MainLayout />}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/invoices" element={<Invoices />} />
+                  <Route path="/invoice-templates" element={<InvoiceTemplates />} />
                   <Route path="/clients" element={<Clients />} />
                   <Route path="/clients/:id" element={<ClientDetail />} />
                   <Route path="/payments" element={<Payments />} />
