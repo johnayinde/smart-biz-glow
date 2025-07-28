@@ -23,23 +23,28 @@ import { Link } from "react-router-dom";
 
 interface ClientsTableProps {
   clients: Client[];
+  onEditClient?: (clientId: string) => void;
+  onCreateInvoice?: (clientId: string) => void;
+  onDeleteClient?: (clientId: string) => void;
 }
 
-export function ClientsTable({ clients }: ClientsTableProps) {
+export const ClientsTable = ({ clients, onEditClient, onCreateInvoice, onDeleteClient }: ClientsTableProps) => {
   const handleViewDetails = (clientId: string) => {
-    console.log(`View details for client ${clientId}`);
+    window.location.href = `/clients/${clientId}`;
   };
-  
-  const handleEditClient = (clientId: string) => {
-    console.log(`Edit client ${clientId}`);
+
+  const handleEdit = (clientId: string) => {
+    onEditClient?.(clientId);
   };
-  
+
   const handleCreateInvoice = (clientId: string) => {
-    console.log(`Create invoice for client ${clientId}`);
+    onCreateInvoice?.(clientId);
   };
-  
-  const handleDeleteClient = (clientId: string) => {
-    console.log(`Delete client ${clientId}`);
+
+  const handleDelete = (clientId: string) => {
+    if (window.confirm('Are you sure you want to delete this client?')) {
+      onDeleteClient?.(clientId);
+    }
   };
 
   return (
@@ -92,19 +97,19 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleViewDetails(client.id)}>
+                    <DropdownMenuItem onClick={() => handleViewDetails(client.id.toString())}>
                       View details
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleEditClient(client.id)}>
+                    <DropdownMenuItem onClick={() => handleEdit(client.id.toString())}>
                       Edit client
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleCreateInvoice(client.id)}>
+                    <DropdownMenuItem onClick={() => handleCreateInvoice(client.id.toString())}>
                       Create invoice
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                       className="text-destructive"
-                      onClick={() => handleDeleteClient(client.id)}
+                      onClick={() => handleDelete(client.id.toString())}
                     >
                       Delete client
                     </DropdownMenuItem>

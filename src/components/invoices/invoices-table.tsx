@@ -27,19 +27,40 @@ interface InvoicesTableProps {
 
 export function InvoicesTable({ invoices }: InvoicesTableProps) {
   const handleDownload = (invoiceId: string) => {
-    console.log(`Downloading invoice ${invoiceId}`);
+    // Create a download link for the invoice
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (invoice) {
+      // In a real app, this would generate and download a PDF
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(`Invoice ${invoice.invoiceNumber} - ${invoice.clientName}`));
+      element.setAttribute('download', `invoice-${invoice.invoiceNumber}.txt`);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
   };
   
   const handleEdit = (invoiceId: string) => {
-    console.log(`Editing invoice ${invoiceId}`);
+    // Navigate to edit page or open edit dialog
+    window.location.href = `/invoices/${invoiceId}/edit`;
   };
   
   const handleMarkAsPaid = (invoiceId: string) => {
-    console.log(`Marking invoice ${invoiceId} as paid`);
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (invoice && window.confirm(`Mark invoice ${invoice.invoiceNumber} as paid?`)) {
+      // Update invoice status to paid
+      console.log(`Marking invoice ${invoiceId} as paid`);
+      // In a real app, this would update the database
+    }
   };
   
   const handleDelete = (invoiceId: string) => {
-    console.log(`Deleting invoice ${invoiceId}`);
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (invoice && window.confirm(`Are you sure you want to delete invoice ${invoice.invoiceNumber}?`)) {
+      console.log(`Deleting invoice ${invoiceId}`);
+      // In a real app, this would delete from the database
+    }
   };
 
   return (
@@ -60,7 +81,7 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
           {invoices.map((invoice) => (
             <TableRow key={invoice.id}>
               <TableCell className="font-medium">
-                <Link to={`/invoices/${invoice.id}`} className="hover:underline">
+                <Link to={`/invoices/${invoice.id}`} className="hover:underline text-primary">
                   {invoice.invoiceNumber}
                 </Link>
               </TableCell>

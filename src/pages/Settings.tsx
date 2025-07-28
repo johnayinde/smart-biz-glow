@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { currentUser } from "@/services/mockData";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -79,7 +80,9 @@ const Settings = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button>Save Changes</Button>
+              <Button onClick={() => toast({ title: "Profile Updated", description: "Your profile information has been saved." })}>
+                Save Changes
+              </Button>
             </CardFooter>
           </Card>
           
@@ -107,7 +110,9 @@ const Settings = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button>Update Password</Button>
+              <Button onClick={() => toast({ title: "Password Updated", description: "Your password has been successfully changed." })}>
+                Update Password
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -146,7 +151,9 @@ const Settings = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button>Save Changes</Button>
+              <Button onClick={() => toast({ title: "Company Settings Saved", description: "Your company information has been updated." })}>
+                Save Changes
+              </Button>
             </CardFooter>
           </Card>
           
@@ -186,7 +193,9 @@ const Settings = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button>Save Changes</Button>
+              <Button onClick={() => toast({ title: "Invoice Settings Saved", description: "Your invoice customization settings have been updated." })}>
+                Save Changes
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -282,7 +291,9 @@ const Settings = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button>Save Preferences</Button>
+              <Button onClick={() => toast({ title: "Notification Preferences Saved", description: "Your notification settings have been updated." })}>
+                Save Preferences
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -451,7 +462,9 @@ const Settings = () => {
               )}
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button>Save Reminder Settings</Button>
+              <Button onClick={() => toast({ title: "Reminder Settings Saved", description: "Your reminder preferences have been updated." })}>
+                Save Reminder Settings
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -507,7 +520,9 @@ const Settings = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button>Save Preferences</Button>
+              <Button onClick={() => toast({ title: "Appearance Settings Saved", description: "Your appearance preferences have been updated." })}>
+                Save Preferences
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>

@@ -7,6 +7,8 @@ import { getMockData } from "@/services/mockData";
 import { Plus, Search, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateClientDialog } from "@/components/clients/create-client-dialog";
+import { EditClientDialog } from "@/components/clients/edit-client-dialog";
+import { CreateInvoiceDialog } from "@/components/invoices/create-invoice-dialog";
 import { 
   Select, 
   SelectContent, 
@@ -14,12 +16,16 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
 
 const Clients = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const clients = getMockData.clients();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [clients, setClients] = useState(getMockData.clients());
   
   // Filter clients based on search query and type
   const filteredClients = clients.filter(client => {
@@ -36,6 +42,30 @@ const Clients = () => {
   
   const handleNewClient = () => {
     setIsDialogOpen(true);
+  };
+
+  const handleEditClient = (clientId: string) => {
+    const client = clients.find(c => c.id.toString() === clientId);
+    if (client) {
+      setSelectedClient(client);
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleCreateInvoice = (clientId: string) => {
+    const client = clients.find(c => c.id.toString() === clientId);
+    if (client) {
+      setSelectedClient(client);
+      setIsInvoiceDialogOpen(true);
+    }
+  };
+
+  const handleDeleteClient = (clientId: string) => {
+    setClients(clients.filter(c => c.id.toString() !== clientId));
+    toast({
+      title: "Client Deleted",
+      description: "The client has been successfully removed.",
+    });
   };
   
   return (
@@ -85,7 +115,12 @@ const Clients = () => {
         </CardHeader>
         <CardContent>
           {filteredClients.length > 0 ? (
-            <ClientsTable clients={filteredClients} />
+            <ClientsTable 
+              clients={filteredClients} 
+              onEditClient={handleEditClient}
+              onCreateInvoice={handleCreateInvoice}
+              onDeleteClient={handleDeleteClient}
+            />
           ) : (
             <EmptyState query={searchQuery} onAddClient={handleNewClient} />
           )}
@@ -93,6 +128,14 @@ const Clients = () => {
       </Card>
 
       <CreateClientDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+      {selectedClient && (
+        <EditClientDialog 
+          open={isEditDialogOpen} 
+          onOpenChange={setIsEditDialogOpen} 
+          client={selectedClient} 
+        />
+      )}
+      <CreateInvoiceDialog open={isInvoiceDialogOpen} onOpenChange={setIsInvoiceDialogOpen} />
     </div>
   );
 };

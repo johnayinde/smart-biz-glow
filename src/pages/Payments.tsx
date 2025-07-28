@@ -96,6 +96,20 @@ const Payments = () => {
     });
   };
 
+  const handleConnectStripe = () => {
+    toast({
+      title: "Stripe Integration",
+      description: "This would connect to Stripe. Integration requires API keys and backend setup.",
+    });
+  };
+
+  const handleConnectPaystack = () => {
+    toast({
+      title: "Paystack Integration", 
+      description: "This would connect to Paystack. Integration requires API keys and backend setup.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

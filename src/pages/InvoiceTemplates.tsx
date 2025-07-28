@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { CreateTemplateDialog } from "@/components/invoices/create-template-dialog";
+import { toast } from "@/hooks/use-toast";
 
 export interface InvoiceTemplate {
   id: string;
@@ -177,8 +178,16 @@ const InvoiceTemplates = () => {
   };
 
   const handleEditTemplate = (templateId: string) => {
-    console.log("Edit template:", templateId);
-    // TODO: Open template editor
+    const templateToEdit = templates.find(t => t.id === templateId);
+    if (templateToEdit) {
+      // For now, we'll open create dialog with the template data
+      // In a real app, this would be a separate edit dialog
+      setIsCreateDialogOpen(true);
+      toast({
+        title: "Edit Template",
+        description: `Opening editor for ${templateToEdit.name}. Editing functionality will be available soon.`,
+      });
+    }
   };
 
   const handleDuplicateTemplate = (template: InvoiceTemplate) => {
