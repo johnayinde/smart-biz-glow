@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, Target, Award, Heart } from "lucide-react";
+import { Users, Target, Award, Heart } from "lucide-react";
 
 const About = () => {
   const values = [
@@ -55,14 +55,6 @@ const About = () => {
       {/* Header */}
       <div className="bg-muted/50 border-b">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center mb-4">
-            <Button variant="ghost" size="sm" asChild className="mr-4">
-              <Link to="/">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
-              </Link>
-            </Button>
-          </div>
           <h1 className="text-4xl font-bold mb-4">About InvoiceApp</h1>
           <p className="text-xl text-muted-foreground max-w-3xl">
             We're on a mission to simplify financial management for businesses of all sizes, 

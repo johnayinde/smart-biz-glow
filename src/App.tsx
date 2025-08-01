@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MainLayout } from "@/components/layout/main-layout";
+import { PublicLayout } from "@/components/layout/public-layout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
@@ -39,12 +40,16 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* Landing and public pages */}
+              {/* Landing page (no layout) */}
               <Route path="/" element={<Landing />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
               
-              {/* Public routes (accessible when not logged in) */}
+              {/* Public routes with navbar/footer */}
+              <Route element={<PublicLayout />}>
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+              </Route>
+              
+              {/* Auth routes (no layout) */}
               <Route element={<PublicRoute />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
