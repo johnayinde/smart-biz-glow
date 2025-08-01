@@ -131,12 +131,12 @@ const Landing = () => {
                 <Link to="/about" className="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   About
                 </Link>
-                <Link to="/features" className="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                <a href="#features" className="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   Features
-                </Link>
-                <Link to="/pricing" className="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                </a>
+                <a href="#pricing" className="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   Pricing
-                </Link>
+                </a>
                 <Link to="/contact" className="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   Contact
                 </Link>
@@ -179,20 +179,20 @@ const Landing = () => {
               >
                 About
               </Link>
-              <Link
-                to="/features"
+              <a
+                href="#features"
                 className="text-muted-foreground hover:text-foreground block px-3 py-2 rounded-md text-base font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Features
-              </Link>
-              <Link
-                to="/pricing"
+              </a>
+              <a
+                href="#pricing"
                 className="text-muted-foreground hover:text-foreground block px-3 py-2 rounded-md text-base font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Pricing
-              </Link>
+              </a>
               <Link
                 to="/contact"
                 className="text-muted-foreground hover:text-foreground block px-3 py-2 rounded-md text-base font-medium"
@@ -238,7 +238,7 @@ const Landing = () => {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <Link to="/login">View Demo</Link>
+                <Link to="/dashboard">View Demo</Link>
               </Button>
             </div>
           </div>
@@ -246,7 +246,7 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-muted/50">
+      <section id="features" className="py-20 bg-muted/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
@@ -311,7 +311,7 @@ const Landing = () => {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 bg-muted/50">
+      <section id="pricing" className="py-20 bg-muted/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
@@ -392,10 +392,10 @@ const Landing = () => {
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/features" className="hover:text-foreground transition-colors">Features</Link></li>
-                <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-                <li><Link to="/integrations" className="hover:text-foreground transition-colors">Integrations</Link></li>
-                <li><Link to="/api" className="hover:text-foreground transition-colors">API</Link></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+                <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
+                <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Templates</Link></li>
               </ul>
             </div>
             
@@ -403,8 +403,8 @@ const Landing = () => {
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/about" className="hover:text-foreground transition-colors">About</Link></li>
-                <li><Link to="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
-                <li><Link to="/careers" className="hover:text-foreground transition-colors">Careers</Link></li>
+                <li><span className="text-muted-foreground/50">Blog (Coming Soon)</span></li>
+                <li><span className="text-muted-foreground/50">Careers (Coming Soon)</span></li>
                 <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
               </ul>
             </div>
@@ -412,10 +412,10 @@ const Landing = () => {
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/help" className="hover:text-foreground transition-colors">Help Center</Link></li>
-                <li><Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
-                <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
+                <li><Link to="/contact" className="hover:text-foreground transition-colors">Help & Support</Link></li>
+                <li><span className="text-muted-foreground/50">Documentation (Coming Soon)</span></li>
+                <li><span className="text-muted-foreground/50">Privacy Policy (Coming Soon)</span></li>
+                <li><span className="text-muted-foreground/50">Terms of Service (Coming Soon)</span></li>
               </ul>
             </div>
           </div>
