@@ -9,6 +9,9 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
+import Landing from "./pages/Landing";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 import Dashboard from "./pages/Dashboard";
 import Invoices from "./pages/Invoices";
 import InvoiceTemplates from "./pages/InvoiceTemplates";
@@ -36,6 +39,11 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
+              {/* Landing and public pages */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              
               {/* Public routes (accessible when not logged in) */}
               <Route element={<PublicRoute />}>
                 <Route path="/login" element={<Login />} />
@@ -46,7 +54,7 @@ const App = () => (
               {/* Protected routes (require authentication) */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<MainLayout />}>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/invoices" element={<Invoices />} />
                   <Route path="/invoices/:id" element={<InvoiceDetail />} />
                   <Route path="/invoice-templates" element={<InvoiceTemplates />} />
