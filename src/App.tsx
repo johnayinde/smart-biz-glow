@@ -40,11 +40,9 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* Landing page (no layout) */}
-              <Route path="/" element={<Landing />} />
-              
               {/* Public routes with navbar/footer */}
               <Route element={<PublicLayout />}>
+                <Route path="/" element={<Landing />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
               </Route>

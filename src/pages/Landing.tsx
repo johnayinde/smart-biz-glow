@@ -11,7 +11,15 @@ import {
   Clock,
   CheckCircle,
   ArrowRight,
-  Star
+  Star,
+  DollarSign,
+  TrendingUp,
+  Bell,
+  CreditCard,
+  Download,
+  Mail,
+  Phone,
+  Globe
 } from "lucide-react";
 
 const Landing = () => {
@@ -46,6 +54,42 @@ const Landing = () => {
       icon: Clock,
       title: "Time-Saving",
       description: "Automate repetitive tasks and focus on growing your business."
+    },
+    {
+      icon: DollarSign,
+      title: "Payment Tracking",
+      description: "Track payments, send reminders, and never miss a payment again."
+    },
+    {
+      icon: TrendingUp,
+      title: "Growth Analytics",
+      description: "Monitor your business growth with detailed reports and forecasting."
+    },
+    {
+      icon: Bell,
+      title: "Smart Notifications",
+      description: "Stay on top of your business with intelligent alerts and reminders."
+    }
+  ];
+
+  const benefits = [
+    {
+      icon: CreditCard,
+      title: "Multiple Payment Options",
+      description: "Accept payments via credit cards, PayPal, bank transfers, and more.",
+      stats: "15+ payment methods supported"
+    },
+    {
+      icon: Download,
+      title: "Export & Import",
+      description: "Easily export invoices to PDF, Excel, or import client data from spreadsheets.",
+      stats: "5+ export formats"
+    },
+    {
+      icon: Globe,
+      title: "Multi-Currency Support",
+      description: "Work with clients worldwide with support for 100+ currencies and tax rates.",
+      stats: "100+ currencies supported"
     }
   ];
 
@@ -168,6 +212,74 @@ const Landing = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Why choose InvoiceApp?
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Built with the features that matter most to growing businesses.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {benefits.map((benefit, index) => (
+              <Card key={index} className="text-center border-0 shadow-sm hover:shadow-lg transition-all duration-300">
+                <CardHeader>
+                  <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <benefit.icon className="h-8 w-8 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl">{benefit.title}</CardTitle>
+                  <Badge variant="secondary" className="mx-auto">
+                    {benefit.stats}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">
+                    {benefit.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 bg-primary text-primary-foreground">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Trusted by businesses worldwide
+            </h2>
+            <p className="text-xl opacity-90">
+              Join the thousands of satisfied customers who've streamlined their invoicing.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold mb-2">50K+</div>
+              <div className="text-sm opacity-90">Active Users</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">2M+</div>
+              <div className="text-sm opacity-90">Invoices Generated</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">$500M+</div>
+              <div className="text-sm opacity-90">Payments Processed</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">99.9%</div>
+              <div className="text-sm opacity-90">Uptime Guarantee</div>
+            </div>
           </div>
         </div>
       </section>
