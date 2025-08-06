@@ -1,6 +1,5 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +16,7 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Layers, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -30,8 +29,7 @@ const formSchema = z.object({
 });
 
 export default function Signup() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signup } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,22 +41,13 @@ export default function Signup() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("Signup attempt with:", values);
-    
-    // Simulate successful signup
-    toast({
-      title: "Account created",
-      description: "You've successfully signed up for SmartInvoice!",
-    });
-    
-    // In a real app, you would send registration data to your backend
-    // and store the auth token in localStorage or a secure cookie
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("user", JSON.stringify({ email: values.email, name: values.name }));
-    
-    // Redirect to the dashboard
-    navigate("/");
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await signup(values.name, values.email, values.password);
+    } catch (error) {
+      // Error handling is done in the AuthContext
+      console.error("Signup error:", error);
+    }
   }
 
   return (
@@ -133,8 +122,9 @@ export default function Signup() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full mt-2">
-                <UserPlus className="mr-2 h-4 w-4" /> Create Account
+              <Button type="submit" className="w-full mt-2" disabled={form.formState.isSubmitting}>
+                <UserPlus className="mr-2 h-4 w-4" /> 
+                {form.formState.isSubmitting ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           </Form>

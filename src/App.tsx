@@ -27,6 +27,7 @@ import InvoiceDetail from "./pages/InvoiceDetail";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import PasswordReset from "./pages/auth/PasswordReset";
+import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
                   <Route path="/insights" element={<Insights />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/subscription" element={<Subscription />} />
                 </Route>
               </Route>
               
