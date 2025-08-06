@@ -28,7 +28,8 @@ export const useSubscription = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      // Use type assertion to work around the missing table types
+      const { data, error } = await (supabase as any)
         .from('subscribers')
         .select('*')
         .eq('user_id', session.user.id)
