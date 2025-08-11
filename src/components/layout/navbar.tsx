@@ -70,8 +70,8 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/placeholder.svg" alt="@user" />
                   <AvatarFallback>
-                    {user?.user_metadata?.full_name 
-                      ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                    {user?.full_name 
+                      ? user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
                       : user?.email?.slice(0, 2).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -81,7 +81,7 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    {user?.user_metadata?.full_name || 'User'}
+                    {user?.full_name || 'User'}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email}
