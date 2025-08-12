@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, CreditCard, DollarSign, Download, Eye, FileText, AlertTriangle, Clock, Send } from "lucide-react";
@@ -11,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { invoices } from "@/services/mockData";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 // Mock payment data
 const mockPayments = [
@@ -410,7 +413,7 @@ const Payments = () => {
                   )}
                 </div>
                 <CardDescription>
-                  Accept payments in multiple currencies
+                  Accept payments across Africa
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -438,19 +441,19 @@ const Payments = () => {
                   )}
                 </div>
                 <CardDescription>
-                  Manage manual bank transfers
+                  Receive direct bank transfers
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Status: {activePaymentMethod === "bank_transfer" ? "Enabled" : "Disabled"}
+                  Integration status: {activePaymentMethod === "bank_transfer" ? "Connected" : "Not connected"}
                 </p>
                 <Button 
                   variant={activePaymentMethod === "bank_transfer" ? "outline" : "default"}
                   className="w-full"
                   onClick={() => setActivePaymentMethod("bank_transfer")}
                 >
-                  {activePaymentMethod === "bank_transfer" ? "Manage" : "Enable"}
+                  {activePaymentMethod === "bank_transfer" ? "Manage" : "Setup"}
                 </Button>
               </CardContent>
             </Card>
@@ -460,93 +463,59 @@ const Payments = () => {
 
       {/* Payment Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Payment Details</DialogTitle>
             <DialogDescription>
-              Transaction information for payment #{selectedPayment?.id}
+              Payment information for {selectedPayment?.reference}
             </DialogDescription>
           </DialogHeader>
-          
           {selectedPayment && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-lg font-medium">{selectedPayment.client}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedPayment.invoice}</p>
+                  <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
+                  <p className="text-lg font-semibold">${selectedPayment.amount.toLocaleString()}</p>
                 </div>
-                <Badge variant={selectedPayment.status === "completed" ? "default" : "secondary"}>
-                  {selectedPayment.status === "completed" ? "Completed" : "Pending"}
-                </Badge>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                  <p className={`capitalize ${selectedPayment.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {selectedPayment.status}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                  <p>{new Date(selectedPayment.date).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Method</Label>
+                  <p>{selectedPayment.method}</p>
+                </div>
               </div>
               
               <Separator />
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Date</p>
-                  <p>{format(new Date(selectedPayment.date), "MMM d, yyyy")}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                  <p className="font-medium">${selectedPayment.amount.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
-                  <p>{selectedPayment.method}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Reference</p>
-                  <p>{selectedPayment.reference}</p>
-                </div>
-                {selectedPayment.cardLast4 && (
-                  <>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Card Type</p>
-                      <p>{selectedPayment.cardType}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Card</p>
-                      <p>**** **** **** {selectedPayment.cardLast4}</p>
-                    </div>
-                  </>
-                )}
-                {selectedPayment.accountNumber && (
-                  <>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Account Name</p>
-                      <p>{selectedPayment.accountName}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Account Number</p>
-                      <p>{selectedPayment.accountNumber}</p>
-                    </div>
-                  </>
-                )}
-                <div className="col-span-2">
-                  <p className="text-sm font-medium text-muted-foreground">Description</p>
-                  <p>{selectedPayment.description}</p>
-                </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Client</Label>
+                <p>{selectedPayment.client}</p>
               </div>
               
-              <div className="flex justify-end space-x-2 pt-4">
-                {selectedPayment.status === "completed" && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleDownloadReceipt(selectedPayment.id)}
-                    className="flex items-center"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Receipt
-                  </Button>
-                )}
-                <Button 
-                  variant="default" 
-                  onClick={() => setIsDetailsOpen(false)}
-                >
-                  Close
-                </Button>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Invoice</Label>
+                <p>{selectedPayment.invoice}</p>
               </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Reference</Label>
+                <p className="font-mono text-sm">{selectedPayment.reference}</p>
+              </div>
+              
+              {selectedPayment.description && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                  <p>{selectedPayment.description}</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
@@ -554,162 +523,148 @@ const Payments = () => {
 
       {/* Record New Payment Sheet */}
       <Sheet open={isNewPaymentOpen} onOpenChange={setIsNewPaymentOpen}>
-        <SheetContent className="sm:max-w-md">
+        <SheetContent className="w-[400px] sm:w-[540px]">
           <SheetHeader>
             <SheetTitle>Record New Payment</SheetTitle>
             <SheetDescription>
-              Add details for a new payment received from a client
+              Record a payment that you received outside of the integrated payment systems.
             </SheetDescription>
           </SheetHeader>
-          
-          <div className="space-y-4 py-4">
-            <RecordPaymentForm onClose={() => setIsNewPaymentOpen(false)} />
-          </div>
+          <RecordPaymentForm onClose={() => setIsNewPaymentOpen(false)} />
         </SheetContent>
       </Sheet>
     </div>
   );
 };
 
-// Create the RecordPaymentForm component
+// Record Payment Form Component
 const RecordPaymentForm = ({ onClose }: { onClose: () => void }) => {
   const [formData, setFormData] = useState({
     client: "",
     invoice: "",
     amount: "",
-    date: format(new Date(), "yyyy-MM-dd"),
-    method: "Credit Card",
+    date: new Date().toISOString().split('T')[0],
+    method: "",
     reference: "",
     description: ""
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would submit to your backend
+    
     toast({
       title: "Payment Recorded",
-      description: `Payment of $${formData.amount} from ${formData.client} has been recorded.`,
+      description: `Payment of $${formData.amount} has been recorded successfully.`,
     });
+    
     onClose();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="client" className="text-sm font-medium">Client</label>
-        <input
-          id="client"
-          name="client"
-          type="text"
-          className="w-full rounded-md border border-input px-3 py-2"
-          value={formData.client}
-          onChange={handleChange}
-          required
-        />
+    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="client">Client</Label>
+          <Select value={formData.client} onValueChange={(value) => handleInputChange("client", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select client" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="acme">Acme Corporation</SelectItem>
+              <SelectItem value="wayne">Wayne Enterprises</SelectItem>
+              <SelectItem value="stark">Stark Innovations</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="invoice">Invoice</Label>
+          <Select value={formData.invoice} onValueChange={(value) => handleInputChange("invoice", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select invoice" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inv-001">INV-001</SelectItem>
+              <SelectItem value="inv-002">INV-002</SelectItem>
+              <SelectItem value="inv-003">INV-003</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      
-      <div className="space-y-2">
-        <label htmlFor="invoice" className="text-sm font-medium">Invoice Number</label>
-        <input
-          id="invoice"
-          name="invoice"
-          type="text"
-          className="w-full rounded-md border border-input px-3 py-2"
-          value={formData.invoice}
-          onChange={handleChange}
-          required
-        />
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="amount">Amount</Label>
+          <Input
+            id="amount"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            value={formData.amount}
+            onChange={(e) => handleInputChange("amount", e.target.value)}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="date">Payment Date</Label>
+          <Input
+            id="date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => handleInputChange("date", e.target.value)}
+            required
+          />
+        </div>
       </div>
-      
+
       <div className="space-y-2">
-        <label htmlFor="amount" className="text-sm font-medium">Amount ($)</label>
-        <input
-          id="amount"
-          name="amount"
-          type="number"
-          min="0"
-          step="0.01"
-          className="w-full rounded-md border border-input px-3 py-2"
-          value={formData.amount}
-          onChange={handleChange}
-          required
-        />
+        <Label htmlFor="method">Payment Method</Label>
+        <Select value={formData.method} onValueChange={(value) => handleInputChange("method", value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select payment method" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+            <SelectItem value="cash">Cash</SelectItem>
+            <SelectItem value="check">Check</SelectItem>
+            <SelectItem value="credit_card">Credit Card</SelectItem>
+            <SelectItem value="paypal">PayPal</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      
+
       <div className="space-y-2">
-        <label htmlFor="date" className="text-sm font-medium">Payment Date</label>
-        <input
-          id="date"
-          name="date"
-          type="date"
-          className="w-full rounded-md border border-input px-3 py-2"
-          value={formData.date}
-          onChange={handleChange}
-          required
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <label htmlFor="method" className="text-sm font-medium">Payment Method</label>
-        <select
-          id="method"
-          name="method"
-          className="w-full rounded-md border border-input px-3 py-2"
-          value={formData.method}
-          onChange={handleChange as any}
-          required
-        >
-          <option>Credit Card</option>
-          <option>Bank Transfer</option>
-          <option>PayPal</option>
-          <option>Cash</option>
-          <option>Check</option>
-        </select>
-      </div>
-      
-      <div className="space-y-2">
-        <label htmlFor="reference" className="text-sm font-medium">Reference Number</label>
-        <input
+        <Label htmlFor="reference">Reference Number</Label>
+        <Input
           id="reference"
-          name="reference"
-          type="text"
-          className="w-full rounded-md border border-input px-3 py-2"
+          placeholder="Transaction reference or check number"
           value={formData.reference}
-          onChange={handleChange}
+          onChange={(e) => handleInputChange("reference", e.target.value)}
         />
       </div>
-      
+
       <div className="space-y-2">
-        <label htmlFor="description" className="text-sm font-medium">Description</label>
-        <textarea
+        <Label htmlFor="description">Description (Optional)</Label>
+        <Textarea
           id="description"
-          name="description"
-          className="w-full rounded-md border border-input px-3 py-2"
-          rows={3}
+          placeholder="Additional payment details..."
           value={formData.description}
-          onChange={handleChange}
+          onChange={(e) => handleInputChange("description", e.target.value)}
         />
       </div>
-      
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button 
-          variant="outline" 
-          type="button"
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-        <Button 
-          type="submit"
-          className="flex items-center"
-        >
-          <DollarSign className="mr-2 h-4 w-4" />
+
+      <div className="flex gap-2 pt-4">
+        <Button type="submit" className="flex-1">
           Record Payment
+        </Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
         </Button>
       </div>
     </form>

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -410,7 +409,7 @@ const Settings = () => {
 
                       {reminderSettings.enableOverdueReminders && (
                         <div className="space-y-2">
-                          <Label htmlFor="overdue-interval">Overdue Reminder Interval</Label>
+                          <Label htmlFor="overdue-reminder-interval">Overdue Reminder Interval (days)</Label>
                           <Select 
                             value={reminderSettings.overdueReminderInterval} 
                             onValueChange={(value) => 
@@ -436,7 +435,7 @@ const Settings = () => {
                     <h3 className="text-lg font-medium mb-4">Reminder Template</h3>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="reminder-template">Reminder Tone</Label>
+                      <Label htmlFor="reminder-template">Template Style</Label>
                       <Select 
                         value={reminderSettings.reminderTemplate} 
                         onValueChange={(value) => 
@@ -449,21 +448,18 @@ const Settings = () => {
                         <SelectContent>
                           <SelectItem value="friendly">Friendly</SelectItem>
                           <SelectItem value="professional">Professional</SelectItem>
-                          <SelectItem value="firm">Firm</SelectItem>
                           <SelectItem value="urgent">Urgent</SelectItem>
+                          <SelectItem value="custom">Custom</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-muted-foreground">
-                        Choose the tone for your reminder emails
-                      </p>
                     </div>
                   </div>
                 </>
               )}
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={() => toast({ title: "Reminder Settings Saved", description: "Your reminder preferences have been updated." })}>
-                Save Reminder Settings
+              <Button onClick={() => toast({ title: "Reminder Settings Saved", description: "Your payment reminder settings have been updated." })}>
+                Save Settings
               </Button>
             </CardFooter>
           </Card>
@@ -472,55 +468,58 @@ const Settings = () => {
         <TabsContent value="appearance" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Appearance Settings</CardTitle>
+              <CardTitle>Theme & Display</CardTitle>
               <CardDescription>
-                Customize how SmartInvoice looks for you
+                Customize the appearance of your application
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium mb-4">Theme</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="border rounded-lg p-4 cursor-pointer bg-background flex flex-col items-center active:scale-95 transition-transform border-primary">
-                    <span className="text-2xl mb-1">☀️</span>
-                    <span>Light</span>
-                  </div>
-                  <div className="border rounded-lg p-4 cursor-pointer bg-gray-950 text-white flex flex-col items-center active:scale-95 transition-transform">
-                    <span className="text-2xl mb-1">🌙</span>
-                    <span>Dark</span>
-                  </div>
-                  <div className="border rounded-lg p-4 cursor-pointer bg-gradient-to-br from-gray-100 to-gray-800 text-black flex flex-col items-center active:scale-95 transition-transform">
-                    <span className="text-2xl mb-1">🖥️</span>
-                    <span>System</span>
-                  </div>
-                </div>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="theme">Theme</Label>
+                <Select defaultValue="light">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">Density</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="border rounded-lg p-4 cursor-pointer flex flex-col items-center active:scale-95 transition-transform">
-                    <span>Compact</span>
-                  </div>
-                  <div className="border rounded-lg p-4 cursor-pointer flex flex-col items-center active:scale-95 transition-transform border-primary">
-                    <span>Default</span>
-                  </div>
-                  <div className="border rounded-lg p-4 cursor-pointer flex flex-col items-center active:scale-95 transition-transform">
-                    <span>Comfortable</span>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="language">Language</Label>
+                <Select defaultValue="en">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                    <SelectItem value="fr">French</SelectItem>
+                    <SelectItem value="de">German</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">Dashboard Layout</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="default-page">Default Page</Label>
-                  <Input id="default-page" defaultValue="Dashboard" />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select defaultValue="utc-5">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="utc-5">UTC-5 (Eastern Time)</SelectItem>
+                    <SelectItem value="utc-6">UTC-6 (Central Time)</SelectItem>
+                    <SelectItem value="utc-7">UTC-7 (Mountain Time)</SelectItem>
+                    <SelectItem value="utc-8">UTC-8 (Pacific Time)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={() => toast({ title: "Appearance Settings Saved", description: "Your appearance preferences have been updated." })}>
+              <Button onClick={() => toast({ title: "Appearance Settings Saved", description: "Your display preferences have been updated." })}>
                 Save Preferences
               </Button>
             </CardFooter>
