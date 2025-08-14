@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 class ApiService {
   private token: string | null = null;
@@ -8,13 +8,13 @@ class ApiService {
   }
 
   private async request<T>(
-    endpoint: string, 
+    endpoint: string,
     options: RequestInit = {}
   ): Promise<{ data: T; error: string | null }> {
     try {
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...options.headers as Record<string, string>,
+        "Content-Type": "application/json",
+        ...(options.headers as Record<string, string>),
       };
 
       if (this.token) {
@@ -29,38 +29,46 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
-        return { data: null as T, error: data.message || 'An error occurred' };
+        return { data: null as T, error: data.message || "An error occurred" };
       }
 
       return { data, error: null };
     } catch (error) {
-      return { 
-        data: null as T, 
-        error: error instanceof Error ? error.message : 'Network error' 
+      return {
+        data: null as T,
+        error: error instanceof Error ? error.message : "Network error",
       };
     }
   }
 
   async get<T>(endpoint: string): Promise<{ data: T; error: string | null }> {
-    return this.request<T>(endpoint, { method: 'GET' });
+    return this.request<T>(endpoint, { method: "GET" });
   }
 
-  async post<T>(endpoint: string, body?: any): Promise<{ data: T; error: string | null }> {
+  async post<T>(
+    endpoint: string,
+    body?: any
+  ): Promise<{ data: T; error: string | null }> {
     return this.request<T>(endpoint, {
-      method: 'POST',
+      method: "POST",
       body: body ? JSON.stringify(body) : undefined,
     });
   }
 
-  async put<T>(endpoint: string, body?: any): Promise<{ data: T; error: string | null }> {
+  async put<T>(
+    endpoint: string,
+    body?: any
+  ): Promise<{ data: T; error: string | null }> {
     return this.request<T>(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       body: body ? JSON.stringify(body) : undefined,
     });
   }
 
-  async delete<T>(endpoint: string): Promise<{ data: T; error: string | null }> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+  async delete<T>(
+    endpoint: string
+  ): Promise<{ data: T; error: string | null }> {
+    return this.request<T>(endpoint, { method: "DELETE" });
   }
 }
 

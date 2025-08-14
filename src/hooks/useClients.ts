@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { clientService, Client } from '@/services/clientService';
+import { useState, useEffect } from "react";
+import { clientService, Client } from "@/services/clientService";
 
 export const useClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -20,7 +20,7 @@ export const useClients = () => {
 
       setClients(data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
