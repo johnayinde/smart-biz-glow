@@ -2,9 +2,10 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
+import { queryClient } from "@/lib/react-query";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PublicLayout } from "@/components/layout/public-layout";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -12,25 +13,25 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
 import Landing from "./pages/landing";
 import About from "./pages/about";
-import Contact from "./pages/Contact";
+import Contact from "./pages/contact";
 import Dashboard from "./pages/dashboard";
 import Invoices from "./pages/invoices";
-import InvoiceTemplates from "./pages/InvoiceTemplates";
+import InvoiceTemplates from "./pages/invoice-templates";
 import Clients from "./pages/clients";
-import ClientDetail from "./pages/ClientDetail";
+import ClientDetail from "./pages/client-detail";
 import Payments from "./pages/payments";
 import Analytics from "./pages/analytics";
 import Insights from "./pages/insights";
 import Settings from "./pages/settings";
-import Notifications from "./pages/Notifications";
-import InvoiceDetail from "./pages/InvoiceDetail";
+import Notifications from "./pages/notifications";
+import InvoiceDetail from "./pages/invoice-detail";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import PasswordReset from "./pages/auth/PasswordReset";
-import Subscription from "./pages/Subscription";
+import Subscription from "./pages/subscription";
 import NotFound from "./pages/not-found";
 
-const queryClient = new QueryClient();
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

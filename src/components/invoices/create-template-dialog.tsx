@@ -25,7 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { InvoiceTemplate } from "@/pages/InvoiceTemplates";
+import { InvoiceTemplate } from "@/services/invoiceService";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
