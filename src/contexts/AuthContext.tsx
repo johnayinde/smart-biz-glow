@@ -9,7 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   subscriptionStatus: SubscriptionData | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string, companyName?: string) => Promise<void>;
   logout: () => Promise<void>;
   checkSubscription: () => Promise<void>;
   createCheckout: (priceId: string, plan: string) => Promise<string>;
@@ -98,12 +98,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = async (name: string, email: string, password: string, companyName?: string) => {
     try {
       const { data, error } = await authService.signup({ 
         email, 
         password, 
-        full_name: name 
+        full_name: name,
+        company_name: companyName
       });
 
       if (error) throw new Error(error);
