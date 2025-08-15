@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +23,7 @@ interface NavbarProps {
 export function Navbar({ title = "Dashboard" }: NavbarProps) {
   const { user, subscriptionStatus, logout } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   const handleCreateInvoice = () => {
     setIsDialogOpen(true);
   };
@@ -38,13 +37,15 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
           {/* Subscription Status Badge */}
           {subscriptionStatus && (
             <Link to="/subscription">
-              <Badge 
-                variant={subscriptionStatus.subscribed ? "default" : "secondary"}
+              <Badge
+                variant={
+                  subscriptionStatus.subscribed ? "default" : "secondary"
+                }
                 className="gap-1"
               >
                 <Crown className="h-3 w-3" />
-                {subscriptionStatus.subscribed 
-                  ? subscriptionStatus.subscription_tier 
+                {subscriptionStatus.subscribed
+                  ? subscriptionStatus.subscription_tier
                   : "Free"}
               </Badge>
             </Link>
@@ -57,7 +58,12 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
             </Link>
           </Button>
 
-          <Button variant="outline" size="sm" className="gap-1" onClick={handleCreateInvoice}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={handleCreateInvoice}
+          >
             <Plus className="h-4 w-4" />
             <span>New Invoice</span>
           </Button>
@@ -70,9 +76,14 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/placeholder.svg" alt="@user" />
                   <AvatarFallback>
-                    {user?.full_name 
-                      ? user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-                      : user?.email?.slice(0, 2).toUpperCase() || 'U'}
+                    {user?.firstName
+                      ? user.firstName
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)
+                      : user?.email?.slice(0, 2).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -81,7 +92,7 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    {user?.full_name || 'User'}
+                    {user?.firstName || "User"}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email}
@@ -96,12 +107,12 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="w-full">Settings</Link>
+                <Link to="/settings" className="w-full">
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
-                Log out
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

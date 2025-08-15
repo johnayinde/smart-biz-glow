@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -13,21 +12,39 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Layers, UserPlus, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
-const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  companyName: z.string().min(2, { message: "Company/Organization name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const formSchema = z
+  .object({
+    firstname: z
+      .string()
+      .min(2, { message: "Firstname must be at least 2 characters" }),
+    lastname: z
+      .string()
+      .min(2, { message: "lastname must be at least 2 characters" }),
+    companyName: z.string().min(2, {
+      message: "Company/Organization name must be at least 2 characters",
+    }),
+    email: z.string().email({ message: "Please enter a valid email address" }),
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters" }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -37,7 +54,8 @@ export default function Signup() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      firstname: "",
+      lastname: "",
       companyName: "",
       email: "",
       password: "",
@@ -47,7 +65,13 @@ export default function Signup() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await signup(values.name, values.email, values.password, values.companyName);
+      await signup(
+        values.firstname,
+        values.lastname,
+        values.email,
+        values.password,
+        values.companyName
+      );
     } catch (error) {
       // Error handling is done in the AuthContext
       console.error("Signup error:", error);
@@ -76,12 +100,25 @@ export default function Signup() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="firstname"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastname"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -121,10 +158,10 @@ export default function Signup() {
                     <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          {...field} 
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          {...field}
                         />
                         <Button
                           type="button"
@@ -153,17 +190,19 @@ export default function Signup() {
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input 
-                          type={showConfirmPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          {...field} 
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          {...field}
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -177,9 +216,15 @@ export default function Signup() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full mt-2" disabled={form.formState.isSubmitting}>
-                <UserPlus className="mr-2 h-4 w-4" /> 
-                {form.formState.isSubmitting ? "Creating Account..." : "Create Account"}
+              <Button
+                type="submit"
+                className="w-full mt-2"
+                disabled={form.formState.isSubmitting}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                {form.formState.isSubmitting
+                  ? "Creating Account..."
+                  : "Create Account"}
               </Button>
             </form>
           </Form>
@@ -187,7 +232,10 @@ export default function Signup() {
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-center text-sm text-muted-foreground">
             <span>Already have an account? </span>
-            <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              to="/login"
+              className="text-primary underline-offset-4 hover:underline"
+            >
               Sign in
             </Link>
           </div>

@@ -3,15 +3,14 @@ import { apiService } from "./api";
 export interface User {
   id: string;
   email: string;
-  full_name?: string;
+  firstName?: string;
+  lastName?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface AuthResponse {
-  user: User;
-  access_token: string;
-  refresh_token: string;
+  data: { user: User; accessToken: string; refreshToken: string };
 }
 
 export interface LoginCredentials {
@@ -22,23 +21,25 @@ export interface LoginCredentials {
 export interface SignupCredentials {
   email: string;
   password: string;
-  full_name: string;
+  firstName: string;
+  lastName: string;
   company_name?: string;
 }
+const AUTH_URL = "/auth/auth";
 
 class AuthService {
   async login(
     credentials: LoginCredentials
   ): Promise<{ data: AuthResponse | null; error: string | null }> {
     const response = await apiService.post<AuthResponse>(
-      "/auth/auth/login",
+      `${AUTH_URL}/login`,
       credentials
     );
 
     if (response.data) {
-      apiService.setToken(response.data.access_token);
-      localStorage.setItem("access_token", response.data.access_token);
-      localStorage.setItem("refresh_token", response.data.refresh_token);
+      apiService.setToken(response.data.data.accessToken);
+      localStorage.setItem("access_token", response.data.data.accessToken);
+      localStorage.setItem("refresh_token", response.data.data.refreshToken);
     }
 
     return response;
@@ -48,14 +49,14 @@ class AuthService {
     credentials: SignupCredentials
   ): Promise<{ data: AuthResponse | null; error: string | null }> {
     const response = await apiService.post<AuthResponse>(
-      "/auth/signup",
+      `${AUTH_URL}/register`,
       credentials
     );
 
     if (response.data) {
-      apiService.setToken(response.data.access_token);
-      localStorage.setItem("access_token", response.data.access_token);
-      localStorage.setItem("refresh_token", response.data.refresh_token);
+      apiService.setToken(response.data.data.accessToken);
+      localStorage.setItem("access_token", response.data.data.accessToken);
+      localStorage.setItem("refresh_token", response.data.data.refreshToken);
     }
 
     return response;
@@ -65,9 +66,11 @@ class AuthService {
     const refreshToken = localStorage.getItem("refresh_token");
 
     if (refreshToken) {
-      await apiService.post("/auth/logout", { refresh_token: refreshToken });
+      await apiService.post(`${AUTH_URL}/logout`, {
+        refresh_token: refreshToken,
+      });
     }
-
+    await apiService.post<AuthResponse>(`${AUTH_URL}/logout`);
     apiService.setToken(null);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -82,7 +85,7 @@ class AuthService {
     }
 
     apiService.setToken(token);
-    return apiService.get<User>("/auth/me");
+    return apiService.get<User>(`${AUTH_URL}/me`);
   }
 
   async refreshToken(): Promise<{
@@ -94,21 +97,26 @@ class AuthService {
       return { data: null, error: "No refresh token found" };
     }
 
-    const response = await apiService.post<AuthResponse>("/auth/refresh", {
-      refresh_token: refreshToken,
-    });
+    const response = await apiService.post<AuthResponse>(
+      `${AUTH_URL}/refresh`,
+      {
+        refresh_token: refreshToken,
+      }
+    );
 
     if (response.data) {
-      apiService.setToken(response.data.access_token);
-      localStorage.setItem("access_token", response.data.access_token);
-      localStorage.setItem("refresh_token", response.data.refresh_token);
+      apiService.setToken(response.data.data.accessToken);
+      localStorage.setItem("access_token", response.data.data.accessToken);
+      localStorage.setItem("refresh_token", response.data.data.refreshToken);
     }
 
     return response;
   }
 
   async resetPassword(email: string): Promise<{ error: string | null }> {
-    const response = await apiService.post("/auth/reset-password", { email });
+    const response = await apiService.post(`${AUTH_URL}/reset-password`, {
+      email,
+    });
     return { error: response.error };
   }
 

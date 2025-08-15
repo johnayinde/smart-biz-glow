@@ -1,15 +1,24 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authService, User } from '@/services/authService';
-import { subscriptionService, SubscriptionData } from '@/services/subscriptionService';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { authService, User } from "@/services/authService";
+import {
+  subscriptionService,
+  SubscriptionData,
+} from "@/services/subscriptionService";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   subscriptionStatus: SubscriptionData | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, companyName?: string) => Promise<void>;
+  signup: (
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    companyName?: string
+  ) => Promise<void>;
   logout: () => Promise<void>;
   checkSubscription: () => Promise<void>;
   createCheckout: (priceId: string, plan: string) => Promise<string>;
@@ -18,10 +27,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionData | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] =
+    useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -29,9 +41,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       authService.initializeToken();
-      
+
       const { data: userData, error } = await authService.getCurrentUser();
-      
+
       if (userData && !error) {
         setUser(userData);
         setIsAuthenticated(true);
@@ -42,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setIsAuthenticated(false);
       }
-      
+
       setLoading(false);
     };
 
@@ -52,17 +64,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkSubscriptionStatus = async () => {
     try {
       if (!user) return;
-      
+
       const { data, error } = await subscriptionService.checkSubscription();
 
       if (error) {
-        console.error('Error checking subscription:', error);
+        console.error("Error checking subscription:", error);
         return;
       }
 
       setSubscriptionStatus(data);
     } catch (error) {
-      console.error('Error checking subscription:', error);
+      console.error("Error checking subscription:", error);
     }
   };
 
@@ -73,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw new Error(error);
 
       if (data) {
-        setUser(data.user);
+        setUser(data.data.user);
         setIsAuthenticated(true);
         // Check subscription after login
         setTimeout(() => {
@@ -82,48 +94,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       toast({
-        title: 'Logged in successfully',
-        description: 'Welcome back to SmartInvoice!',
+        title: "Logged in successfully",
+        description: "Welcome back to SmartInvoice!",
       });
 
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error: any) {
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
       toast({
-        title: 'Login failed',
-        description: error.message || 'Invalid email or password',
-        variant: 'destructive',
+        title: "Login failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
       });
       throw error;
     }
   };
 
-  const signup = async (name: string, email: string, password: string, companyName?: string) => {
+  const signup = async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    companyName?: string
+  ) => {
     try {
-      const { data, error } = await authService.signup({ 
-        email, 
-        password, 
-        full_name: name,
-        company_name: companyName
+      const { data, error } = await authService.signup({
+        email,
+        password,
+        firstName,
+        lastName,
+        company_name: companyName,
       });
 
       if (error) throw new Error(error);
 
       if (data) {
-        setUser(data.user);
+        setUser(data.data.user);
         setIsAuthenticated(true);
         toast({
-          title: 'Account created successfully',
-          description: 'Welcome to SmartInvoice!',
+          title: "Account created successfully",
+          description: "Welcome to SmartInvoice!",
         });
-        navigate('/dashboard');
+        navigate("/dashboard");
       }
     } catch (error: any) {
-      console.error('Signup failed:', error);
+      console.error("Signup failed:", error);
       toast({
-        title: 'Signup failed',
-        description: error.message || 'Could not create your account',
-        variant: 'destructive',
+        title: "Signup failed",
+        description: error.message || "Could not create your account",
+        variant: "destructive",
       });
       throw error;
     }
@@ -135,19 +154,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setIsAuthenticated(false);
       setSubscriptionStatus(null);
-      
+
       toast({
-        title: 'Logged out',
-        description: 'You have been successfully logged out',
+        title: "Logged out",
+        description: "You have been successfully logged out",
       });
 
-      navigate('/login');
+      navigate("/login");
     } catch (error: any) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
       toast({
-        title: 'Logout failed',
-        description: error.message || 'Could not log you out',
-        variant: 'destructive',
+        title: "Logout failed",
+        description: error.message || "Could not log you out",
+        variant: "destructive",
       });
     }
   };
@@ -156,9 +175,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await checkSubscriptionStatus();
   };
 
-  const createCheckout = async (priceId: string, plan: string): Promise<string> => {
+  const createCheckout = async (
+    priceId: string,
+    plan: string
+  ): Promise<string> => {
     try {
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await subscriptionService.createCheckout(priceId);
 
@@ -166,11 +188,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return data!.url;
     } catch (error: any) {
-      console.error('Error creating checkout:', error);
+      console.error("Error creating checkout:", error);
       toast({
-        title: 'Checkout failed',
-        description: error.message || 'Could not create checkout session',
-        variant: 'destructive',
+        title: "Checkout failed",
+        description: error.message || "Could not create checkout session",
+        variant: "destructive",
       });
       throw error;
     }
@@ -178,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const openCustomerPortal = async (): Promise<string> => {
     try {
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await subscriptionService.createCustomerPortal();
 
@@ -186,11 +208,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return data!.url;
     } catch (error: any) {
-      console.error('Error opening customer portal:', error);
+      console.error("Error opening customer portal:", error);
       toast({
-        title: 'Portal access failed',
-        description: error.message || 'Could not open customer portal',
-        variant: 'destructive',
+        title: "Portal access failed",
+        description: error.message || "Could not open customer portal",
+        variant: "destructive",
       });
       throw error;
     }
@@ -201,17 +223,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
-      subscriptionStatus,
-      login, 
-      signup, 
-      logout, 
-      checkSubscription,
-      createCheckout,
-      openCustomerPortal
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        subscriptionStatus,
+        login,
+        signup,
+        logout,
+        checkSubscription,
+        createCheckout,
+        openCustomerPortal,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -220,7 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
