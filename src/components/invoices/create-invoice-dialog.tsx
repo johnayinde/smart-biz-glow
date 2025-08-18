@@ -179,7 +179,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
     const selectedClient = clients.find(c => c.id.toString() === values.clientId);
     
     return (
-      <div className="p-4 max-w-[600px] border rounded-md bg-white">
+      <div className="p-4 max-w-[600px] border rounded-md bg-card">
         <div className="flex justify-between items-start mb-6">
           <div>
             <h2 className="text-xl font-bold">{selectedTemplate?.name} Template</h2>

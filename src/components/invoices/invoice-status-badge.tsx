@@ -11,15 +11,15 @@ export function InvoiceStatusBadge({ status, className }: InvoiceStatusBadgeProp
   const getStatusStyles = (status: InvoiceStatus) => {
     switch (status) {
       case "paid":
-        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 border-green-200 dark:border-green-800";
+        return "bg-status-paid-bg text-invoice-paid-foreground border-invoice-paid/20";
       case "pending":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
+        return "bg-status-pending-bg text-invoice-pending-foreground border-invoice-pending/20";
       case "overdue":
-        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300 border-red-200 dark:border-red-800";
+        return "bg-status-overdue-bg text-invoice-overdue-foreground border-invoice-overdue/20";
       case "draft":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700";
+        return "bg-status-draft-bg text-invoice-draft-foreground border-invoice-draft/20";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+        return "bg-muted text-muted-foreground border-border";
     }
   };
 

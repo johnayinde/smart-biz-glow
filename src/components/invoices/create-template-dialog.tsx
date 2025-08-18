@@ -158,7 +158,7 @@ export const CreateTemplateDialog = ({
     const values = form.watch();
     
     return (
-      <div className="border rounded-lg p-4 bg-white" style={{ 
+      <div className="border rounded-lg p-4 bg-card" style={{ 
         fontFamily: values.fontFamily,
         fontSize: `${values.fontSize}px`,
         color: values.secondaryColor 

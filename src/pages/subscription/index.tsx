@@ -102,7 +102,7 @@ export default function Subscription() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Crown className="h-5 w-5 text-yellow-500" />
+            <Crown className="h-5 w-5 text-invoice-pending" />
             Current Plan: {currentPlan.name}
           </CardTitle>
           <CardDescription>
@@ -183,7 +183,7 @@ export default function Subscription() {
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-blue-500 text-white">
+                  <Badge className="bg-primary text-primary-foreground">
                     <Star className="h-3 w-3 mr-1" />
                     Most Popular
                   </Badge>

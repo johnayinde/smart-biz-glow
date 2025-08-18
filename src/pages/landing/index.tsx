@@ -302,7 +302,7 @@ const Landing = () => {
                 <CardContent className="pt-6">
                   <div className="flex mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-500 fill-current" />
+                      <Star key={i} className="h-5 w-5 text-invoice-pending fill-current" />
                     ))}
                   </div>
                   <p className="text-muted-foreground mb-4 italic">

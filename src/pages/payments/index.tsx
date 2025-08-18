@@ -334,8 +334,8 @@ const Payments = () => {
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                               payment.status === "completed"
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400"
+                                ? "bg-status-paid-bg text-invoice-paid-foreground"
+                                : "bg-status-pending-bg text-invoice-pending-foreground"
                             }`}
                           >
                             {payment.status === "completed" ? "Completed" : "Pending"}
@@ -479,7 +479,7 @@ const Payments = () => {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Status</Label>
-                  <p className={`capitalize ${selectedPayment.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                  <p className={`capitalize ${selectedPayment.status === 'completed' ? 'text-invoice-paid' : 'text-invoice-pending'}`}>
                     {selectedPayment.status}
                   </p>
                 </div>

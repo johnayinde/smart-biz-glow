@@ -27,8 +27,8 @@ export function StatsCards({ stats }: StatsCardsProps) {
       title: "Pending",
       value: formatter.format(stats.pendingAmount),
       icon: Clock,
-      color: "text-yellow-500",
-      bgColor: "bg-yellow-100 dark:bg-yellow-900/20",
+      color: "text-invoice-pending",
+      bgColor: "bg-status-pending-bg",
     },
     {
       title: "Overdue",

@@ -43,6 +43,22 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 214 100% 50%;
+    
+    /* Invoice status colors */
+    --invoice-pending: 45 100% 50%;
+    --invoice-pending-foreground: 45 100% 15%;
+    --invoice-paid: 152 100% 38%;
+    --invoice-paid-foreground: 152 100% 15%;
+    --invoice-overdue: 14 100% 55%;
+    --invoice-overdue-foreground: 14 100% 15%;
+    --invoice-draft: 215 16% 47%;
+    --invoice-draft-foreground: 215 16% 15%;
+    
+    /* Status backgrounds */
+    --status-pending-bg: 45 100% 95%;
+    --status-paid-bg: 152 100% 95%;
+    --status-overdue-bg: 14 100% 95%;
+    --status-draft-bg: 215 16% 95%;
   }
 
   .dark {
@@ -82,6 +98,22 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
     --sidebar-ring: 214 100% 50%;
+    
+    /* Invoice status colors - dark mode */
+    --invoice-pending: 45 80% 60%;
+    --invoice-pending-foreground: 45 100% 85%;
+    --invoice-paid: 152 80% 60%;
+    --invoice-paid-foreground: 152 100% 85%;
+    --invoice-overdue: 14 80% 60%;
+    --invoice-overdue-foreground: 14 100% 85%;
+    --invoice-draft: 215 16% 65%;
+    --invoice-draft-foreground: 215 16% 85%;
+    
+    /* Status backgrounds - dark mode */
+    --status-pending-bg: 45 50% 15%;
+    --status-paid-bg: 152 50% 15%;
+    --status-overdue-bg: 14 50% 15%;
+    --status-draft-bg: 215 16% 15%;
   }
 }
 

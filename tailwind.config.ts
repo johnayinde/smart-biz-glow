@@ -64,10 +64,20 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				invoice: {
-					pending: '#FFB800',
-					paid: '#00C48C',
-					overdue: '#FF5724',
-					draft: '#718096'
+					pending: 'hsl(var(--invoice-pending))',
+					'pending-foreground': 'hsl(var(--invoice-pending-foreground))',
+					paid: 'hsl(var(--invoice-paid))',
+					'paid-foreground': 'hsl(var(--invoice-paid-foreground))',
+					overdue: 'hsl(var(--invoice-overdue))',
+					'overdue-foreground': 'hsl(var(--invoice-overdue-foreground))',
+					draft: 'hsl(var(--invoice-draft))',
+					'draft-foreground': 'hsl(var(--invoice-draft-foreground))'
+				},
+				status: {
+					'pending-bg': 'hsl(var(--status-pending-bg))',
+					'paid-bg': 'hsl(var(--status-paid-bg))',
+					'overdue-bg': 'hsl(var(--status-overdue-bg))',
+					'draft-bg': 'hsl(var(--status-draft-bg))'
 				}
 			},
 			borderRadius: {
