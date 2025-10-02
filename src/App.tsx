@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,8 +30,6 @@ import PasswordReset from "./pages/auth/PasswordReset";
 import Subscription from "./pages/subscription";
 import NotFound from "./pages/not-found";
 
-
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light">
@@ -48,32 +45,35 @@ const App = () => (
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
               </Route>
-              
+
               {/* Auth routes (no layout) */}
               <Route element={<PublicRoute />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/reset-password" element={<PasswordReset />} />
               </Route>
-              
+
               {/* Protected routes (require authentication) */}
-              <Route element={<ProtectedRoute />}>
-                <Route element={<MainLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/invoices" element={<Invoices />} />
-                  <Route path="/invoices/:id" element={<InvoiceDetail />} />
-                  <Route path="/invoice-templates" element={<InvoiceTemplates />} />
-                  <Route path="/clients" element={<Clients />} />
-                  <Route path="/clients/:id" element={<ClientDetail />} />
-                  <Route path="/payments" element={<Payments />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/insights" element={<Insights />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/subscription" element={<Subscription />} />
-                </Route>
+              {/* <Route element={<ProtectedRoute />}> */}
+              <Route element={<MainLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                <Route
+                  path="/invoice-templates"
+                  element={<InvoiceTemplates />}
+                />
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/clients/:id" element={<ClientDetail />} />
+                <Route path="/payments" element={<Payments />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/insights" element={<Insights />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/subscription" element={<Subscription />} />
               </Route>
-              
+              {/* </Route> */}
+
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -85,3 +85,33 @@ const App = () => (
 );
 
 export default App;
+
+// import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// import { BrowserRouter } from "react-router-dom";
+// import { AuthProvider } from "@/context/auth-context";
+// import { Toaster } from "@/components/ui/toaster";
+// import { AppRoutes } from "@/routes";
+
+// const queryClient = new QueryClient({
+//   defaultOptions: {
+//     queries: {
+//       staleTime: 30000, // 30 seconds
+//       retry: 1,
+//     },
+//   },
+// });
+
+// function App() {
+//   return (
+//     <QueryClientProvider client={queryClient}>
+//       <BrowserRouter>
+//         <AuthProvider>
+//           <AppRoutes />
+//           <Toaster />
+//         </AuthProvider>
+//       </BrowserRouter>
+//     </QueryClientProvider>
+//   );
+// }
+
+// export default App;

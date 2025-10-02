@@ -1,8 +1,15 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Invoice } from "@/services/mockData";
+import {
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+// import { Invoice } from "@/services/mockData";
 import { useEffect, useState } from "react";
+import { Invoice } from "@/services/invoiceService";
 
 interface InvoiceStatusChartProps {
   invoices: Invoice[];
@@ -32,28 +39,30 @@ export function InvoiceStatusChart({ invoices }: InvoiceStatusChartProps) {
     const statusCounts: Record<string, number> = {};
     const statuses = ["paid", "pending", "overdue", "draft"];
     const statusColors = {
-      paid: "#00C48C",     // Green
-      pending: "#FFB800",  // Yellow
-      overdue: "#FF5724",  // Red
-      draft: "#718096"     // Gray
+      paid: "#00C48C", // Green
+      pending: "#FFB800", // Yellow
+      overdue: "#FF5724", // Red
+      draft: "#718096", // Gray
     };
 
     // Initialize counts to zero
-    statuses.forEach(status => {
+    statuses.forEach((status) => {
       statusCounts[status] = 0;
     });
 
     // Count invoices by status
-    invoices.forEach(invoice => {
+    invoices.forEach((invoice) => {
       statusCounts[invoice.status] += 1;
     });
 
     // Format data for chart
-    const data = statuses.map(status => ({
-      name: status.charAt(0).toUpperCase() + status.slice(1),
-      value: statusCounts[status],
-      color: statusColors[status as keyof typeof statusColors]
-    })).filter(item => item.value > 0);
+    const data = statuses
+      .map((status) => ({
+        name: status.charAt(0).toUpperCase() + status.slice(1),
+        value: statusCounts[status],
+        color: statusColors[status as keyof typeof statusColors],
+      }))
+      .filter((item) => item.value > 0);
 
     setChartData(data);
   }, [invoices]);
@@ -80,7 +89,7 @@ export function InvoiceStatusChart({ invoices }: InvoiceStatusChartProps) {
                 outerRadius={outerRadius}
                 paddingAngle={4}
                 dataKey="value"
-                label={({ name, percent }) => 
+                label={({ name, percent }) =>
                   `${name} ${(percent * 100).toFixed(0)}%`
                 }
                 labelLine={false}
@@ -89,12 +98,12 @@ export function InvoiceStatusChart({ invoices }: InvoiceStatusChartProps) {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip 
-                formatter={(value) => [`${value} invoices`, `Status`]} 
+              <Tooltip
+                formatter={(value) => [`${value} invoices`, `Status`]}
                 contentStyle={{
-                  backgroundColor: 'var(--background)',
-                  borderColor: 'var(--border)',
-                  borderRadius: 'var(--radius)',
+                  backgroundColor: "var(--background)",
+                  borderColor: "var(--border)",
+                  borderRadius: "var(--radius)",
                 }}
               />
               <Legend />

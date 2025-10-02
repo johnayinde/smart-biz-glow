@@ -1,21 +1,24 @@
-import { apiService } from './api';
+import { apiService } from "./api";
 
 export interface Client {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   phone?: string;
   company?: string;
   website?: string;
   address?: string;
-  tax_id?: string;
+  taxId?: string;
   notes?: string;
-  contact_type?: string;
-  payment_terms?: string;
-  status: 'active' | 'inactive';
-  totalBilled: number;
-  created_at: string;
-  updated_at: string;
+  paymentTerms?: string;
+  status: "active" | "inactive";
+  billingStats: {
+    totalInvoiced: number;
+    totalPaid: number;
+    pendingAmount: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateClientData {
@@ -25,34 +28,37 @@ export interface CreateClientData {
   company?: string;
   website?: string;
   address?: string;
-  tax_id?: string;
+  taxId?: string;
   notes?: string;
-  contact_type?: string;
-  payment_terms?: string;
-  status?: 'active' | 'inactive';
+  paymentTerms?: string;
 }
-
-export interface UpdateClientData extends Partial<CreateClientData> {}
 
 class ClientService {
   async getClients(): Promise<{ data: Client[] | null; error: string | null }> {
-    return apiService.get<Client[]>('/clients');
+    return apiService.get<Client[]>("/client/clients");
   }
 
-  async getClient(id: string): Promise<{ data: Client | null; error: string | null }> {
-    return apiService.get<Client>(`/clients/${id}`);
+  async getClient(
+    id: string
+  ): Promise<{ data: Client | null; error: string | null }> {
+    return apiService.get<Client>(`/client/clients/${id}`);
   }
 
-  async createClient(clientData: CreateClientData): Promise<{ data: Client | null; error: string | null }> {
-    return apiService.post<Client>('/clients', clientData);
+  async createClient(
+    data: CreateClientData
+  ): Promise<{ data: Client | null; error: string | null }> {
+    return apiService.post<Client>("/client/clients", data);
   }
 
-  async updateClient(id: string, clientData: UpdateClientData): Promise<{ data: Client | null; error: string | null }> {
-    return apiService.put<Client>(`/clients/${id}`, clientData);
+  async updateClient(
+    id: string,
+    data: Partial<CreateClientData>
+  ): Promise<{ data: Client | null; error: string | null }> {
+    return apiService.patch<Client>(`/client/clients/${id}`, data);
   }
 
   async deleteClient(id: string): Promise<{ data: any; error: string | null }> {
-    return apiService.delete(`/clients/${id}`);
+    return apiService.delete(`/client/clients/${id}`);
   }
 }
 

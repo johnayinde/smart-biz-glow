@@ -1,55 +1,44 @@
-import { apiService } from './api';
+import { apiService } from "./api";
 
 export interface Payment {
-  id: string;
-  invoice_id?: string;
+  _id: string;
+  invoiceId: string;
+  clientId: string;
   amount: number;
-  payment_date: string;
-  payment_method?: string;
-  reference_number?: string;
+  paymentMethod: string;
+  paymentDate: string;
+  transactionReference?: string;
   notes?: string;
-  created_at: string;
+  status: "completed" | "pending" | "failed" | "refunded";
+  createdAt: string;
 }
 
 export interface CreatePaymentData {
-  invoice_id?: string;
+  invoiceId: string;
+  clientId: string;
   amount: number;
-  payment_date: string;
-  payment_method?: string;
-  reference_number?: string;
+  paymentMethod: string;
+  paymentDate: string;
+  transactionReference?: string;
   notes?: string;
 }
 
-export interface PaymentStats {
-  total_received: number;
-  total_pending: number;
-  total_overdue: number;
-  recent_payments: Payment[];
-}
-
 class PaymentService {
-  async getPayments(): Promise<{ data: Payment[] | null; error: string | null }> {
-    return apiService.get<Payment[]>('/payments');
+  async getPayments(): Promise<{
+    data: Payment[] | null;
+    error: string | null;
+  }> {
+    return apiService.get<Payment[]>("/payment/payments");
   }
 
-  async getPayment(id: string): Promise<{ data: Payment | null; error: string | null }> {
-    return apiService.get<Payment>(`/payments/${id}`);
+  async createPayment(
+    data: CreatePaymentData
+  ): Promise<{ data: Payment | null; error: string | null }> {
+    return apiService.post<Payment>("/payment/payments", data);
   }
 
-  async createPayment(paymentData: CreatePaymentData): Promise<{ data: Payment | null; error: string | null }> {
-    return apiService.post<Payment>('/payments', paymentData);
-  }
-
-  async updatePayment(id: string, paymentData: Partial<CreatePaymentData>): Promise<{ data: Payment | null; error: string | null }> {
-    return apiService.put<Payment>(`/payments/${id}`, paymentData);
-  }
-
-  async deletePayment(id: string): Promise<{ data: any; error: string | null }> {
-    return apiService.delete(`/payments/${id}`);
-  }
-
-  async getPaymentStats(): Promise<{ data: PaymentStats | null; error: string | null }> {
-    return apiService.get<PaymentStats>('/payments/stats');
+  async getPaymentStats(): Promise<{ data: any; error: string | null }> {
+    return apiService.get("/payment/payments/stats");
   }
 }
 

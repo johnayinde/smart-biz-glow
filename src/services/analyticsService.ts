@@ -1,49 +1,42 @@
-import { apiService } from './api';
+import { apiService } from "./api";
 
 export interface DashboardStats {
-  total_clients: number;
-  total_invoices: number;
-  total_revenue: number;
-  pending_payments: number;
-  overdue_invoices: number;
-}
-
-export interface ChartData {
-  name: string;
-  value: number;
-  color?: string;
-}
-
-export interface RecentActivity {
-  id: string;
-  type: 'invoice_created' | 'payment_received' | 'client_added' | 'invoice_sent';
-  description: string;
-  timestamp: string;
-  amount?: number;
-}
-
-export interface AnalyticsData {
-  revenue_chart: ChartData[];
-  invoice_status_chart: ChartData[];
-  monthly_revenue: ChartData[];
-  recent_activities: RecentActivity[];
+  totalInvoices: number;
+  draftInvoices: number;
+  sentInvoices: number;
+  paidInvoices: number;
+  overdueInvoices: number;
+  totalRevenue: number;
+  pendingAmount: number;
+  overdueAmount: number;
+  paidAmount: number;
+  totalClients: number;
+  remindersSent: number;
+  scheduledReminders: number;
+  collectionRate: number;
+  averageInvoiceValue: number;
 }
 
 class AnalyticsService {
-  async getDashboardStats(): Promise<{ data: DashboardStats | null; error: string | null }> {
-    return apiService.get<DashboardStats>('/analytics/dashboard-stats');
+  async getDashboardStats(): Promise<{
+    data: DashboardStats | null;
+    error: string | null;
+  }> {
+    return apiService.get<DashboardStats>("/analytics/analytics/dashboard");
   }
 
-  async getAnalyticsData(period: 'week' | 'month' | 'year' = 'month'): Promise<{ data: AnalyticsData | null; error: string | null }> {
-    return apiService.get<AnalyticsData>(`/analytics/data?period=${period}`);
+  async getRevenueAnalytics(
+    period: "week" | "month" | "year" = "month"
+  ): Promise<{ data: any; error: string | null }> {
+    return apiService.get(`/analytics/analytics/revenue?period=${period}`);
   }
 
-  async getInsights(): Promise<{ data: any[] | null; error: string | null }> {
-    return apiService.get<any[]>('/analytics/insights');
+  async getReminderAnalytics(): Promise<{ data: any; error: string | null }> {
+    return apiService.get("/analytics/analytics/reminders");
   }
 
-  async exportData(format: 'csv' | 'pdf' = 'csv'): Promise<{ data: Blob | null; error: string | null }> {
-    return apiService.get<Blob>(`/analytics/export?format=${format}`);
+  async getClientInsights(): Promise<{ data: any; error: string | null }> {
+    return apiService.get("/analytics/analytics/clients");
   }
 }
 

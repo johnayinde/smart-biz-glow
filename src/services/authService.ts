@@ -1,130 +1,65 @@
 import { apiService } from "./api";
 
-export interface User {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AuthResponse {
-  data: { user: User; accessToken: string; refreshToken: string };
-}
-
-export interface LoginCredentials {
+export interface LoginData {
   email: string;
   password: string;
 }
 
-export interface SignupCredentials {
+export interface RegisterData {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-  company_name?: string;
 }
-const AUTH_URL = "/auth/auth";
+
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isVerified: boolean;
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+}
 
 class AuthService {
   async login(
-    credentials: LoginCredentials
+    data: LoginData
   ): Promise<{ data: AuthResponse | null; error: string | null }> {
-    const response = await apiService.post<AuthResponse>(
-      `${AUTH_URL}/login`,
-      credentials
-    );
-
-    if (response.data) {
-      apiService.setToken(response.data.data.accessToken);
-      localStorage.setItem("access_token", response.data.data.accessToken);
-      localStorage.setItem("refresh_token", response.data.data.refreshToken);
+    const result = await apiService.post<AuthResponse>("/auth/login", data);
+    if (result.data) {
+      apiService.setToken(result.data.accessToken);
     }
-
-    return response;
+    return result;
   }
 
-  async signup(
-    credentials: SignupCredentials
+  async register(
+    data: RegisterData
   ): Promise<{ data: AuthResponse | null; error: string | null }> {
-    const response = await apiService.post<AuthResponse>(
-      `${AUTH_URL}/register`,
-      credentials
-    );
-
-    if (response.data) {
-      apiService.setToken(response.data.data.accessToken);
-      localStorage.setItem("access_token", response.data.data.accessToken);
-      localStorage.setItem("refresh_token", response.data.data.refreshToken);
+    const result = await apiService.post<AuthResponse>("/auth/register", data);
+    if (result.data) {
+      apiService.setToken(result.data.accessToken);
     }
-
-    return response;
-  }
-
-  async logout(): Promise<{ error: string | null }> {
-    const refreshToken = localStorage.getItem("refresh_token");
-
-    if (refreshToken) {
-      await apiService.post(`${AUTH_URL}/logout`, {
-        refresh_token: refreshToken,
-      });
-    }
-    await apiService.post<AuthResponse>(`${AUTH_URL}/logout`);
-    apiService.setToken(null);
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-
-    return { error: null };
+    return result;
   }
 
   async getCurrentUser(): Promise<{ data: User | null; error: string | null }> {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      return { data: null, error: "No token found" };
-    }
-
-    apiService.setToken(token);
-    return apiService.get<User>(`${AUTH_URL}/me`);
+    return apiService.get<User>("/auth/me");
   }
 
-  async refreshToken(): Promise<{
-    data: AuthResponse | null;
-    error: string | null;
-  }> {
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) {
-      return { data: null, error: "No refresh token found" };
-    }
-
-    const response = await apiService.post<AuthResponse>(
-      `${AUTH_URL}/refresh`,
-      {
-        refresh_token: refreshToken,
-      }
-    );
-
-    if (response.data) {
-      apiService.setToken(response.data.data.accessToken);
-      localStorage.setItem("access_token", response.data.data.accessToken);
-      localStorage.setItem("refresh_token", response.data.data.refreshToken);
-    }
-
-    return response;
+  async logout() {
+    apiService.setToken(null);
   }
 
-  async resetPassword(email: string): Promise<{ error: string | null }> {
-    const response = await apiService.post(`${AUTH_URL}/reset-password`, {
-      email,
-    });
-    return { error: response.error };
-  }
-
-  initializeToken() {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      apiService.setToken(token);
-    }
+  async refreshToken(
+    refreshToken: string
+  ): Promise<{ data: { accessToken: string } | null; error: string | null }> {
+    return apiService.post("/auth/refresh", { refreshToken });
   }
 }
 

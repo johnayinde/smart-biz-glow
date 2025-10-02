@@ -1,16 +1,25 @@
-
+// stats-cards.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, Clock, CheckCircle } from "lucide-react";
-import { DashboardStats } from "@/services/mockData";
+
+// Define the shape this component actually needs
+export interface StatsCardsInput {
+  totalInvoiced: number;
+  pendingAmount: number;
+  overdue: number;
+  paid: number;
+  clientsCount: number;
+  recentActivity: any[];
+}
 
 interface StatsCardsProps {
-  stats: DashboardStats;
+  stats: StatsCardsInput; // use the smaller view-model, not DashboardStats
 }
 
 export function StatsCards({ stats }: StatsCardsProps) {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });

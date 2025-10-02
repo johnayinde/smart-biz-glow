@@ -1,52 +1,33 @@
-import { useParams } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Send, Edit, DollarSign, Calendar } from "lucide-react";
-
-const mockInvoice = {
-  id: "1",
-  invoice_number: "INV-001",
-  status: "sent" as const,
-  issue_date: "2024-01-15",
-  due_date: "2024-02-15",
-  subtotal: 1000.00,
-  tax_amount: 100.00,
-  total: 1100.00,
-  currency: "USD",
-  notes: "Payment due within 30 days. Late payments may incur additional fees.",
-  client: {
-    id: "1",
-    name: "Acme Corporation",
-    email: "billing@acme.com",
-  },
-  items: [
-    {
-      id: "1",
-      description: "Website Design",
-      quantity: 1,
-      rate: 500.00,
-      amount: 500.00,
-    },
-    {
-      id: "2",
-      description: "Logo Design",
-      quantity: 1,
-      rate: 300.00,
-      amount: 300.00,
-    },
-    {
-      id: "3",
-      description: "Business Card Design",
-      quantity: 100,
-      rate: 2.00,
-      amount: 200.00,
-    },
-  ],
-  created_at: "2024-01-15T10:00:00Z",
-  updated_at: "2024-01-15T10:00:00Z",
-};
+import {
+  Download,
+  Send,
+  Edit,
+  DollarSign,
+  Calendar,
+  ArrowLeft,
+} from "lucide-react";
+import {
+  useInvoiceQuery,
+  useMarkInvoiceAsPaid,
+} from "@/hooks/queries/use-invoices-query";
+import {
+  useReminderHistoryQuery,
+  useSendManualReminder,
+} from "@/hooks/queries/use-reminders-query";
+import { ReminderTimeline } from "@/components/reminders/reminder-timeline";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const statusColors = {
   draft: "secondary",
@@ -58,12 +39,71 @@ const statusColors = {
 
 export default function InvoiceDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const { data: invoice, isLoading } = useInvoiceQuery(id!);
+  const { data: reminders = [] } = useReminderHistoryQuery(id!);
+  const markAsPaid = useMarkInvoiceAsPaid();
+  const sendManualReminder = useSendManualReminder();
+
+  const handleMarkAsPaid = async () => {
+    try {
+      await markAsPaid.mutateAsync(id!);
+      toast({ title: "Invoice marked as paid" });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendReminder = async () => {
+    try {
+      await sendManualReminder.mutateAsync(id!);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelReminders = () => {
+    toast({ title: "Feature coming soon" });
+  };
+
+  if (isLoading) {
+    return <div className="container mx-auto p-6">Loading...</div>;
+  }
+
+  if (!invoice) {
+    return <div className="container mx-auto p-6">Invoice not found</div>;
+  }
+
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: invoice.currency || "USD",
+  });
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">{mockInvoice.invoice_number}</h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/invoices")}
+            className="mb-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Invoices
+          </Button>
+          <h1 className="text-3xl font-bold">{invoice.invoiceNumber}</h1>
           <p className="text-muted-foreground">Invoice details and status</p>
         </div>
         <div className="flex gap-2">
@@ -79,59 +119,58 @@ export default function InvoiceDetail() {
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
-          {mockInvoice.status === 'sent' && (
-            <Button>
+          {invoice.status !== "paid" && (
+            <Button onClick={handleMarkAsPaid} disabled={markAsPaid.isPending}>
               <DollarSign className="h-4 w-4 mr-2" />
-              Mark as Paid
+              {markAsPaid.isPending ? "Processing..." : "Mark as Paid"}
             </Button>
           )}
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        {/* Invoice Details */}
+        <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle>Invoice Details</CardTitle>
                   <CardDescription>
-                    Invoice #{mockInvoice.invoice_number}
+                    Invoice #{invoice.invoiceNumber}
                   </CardDescription>
                 </div>
-                <Badge variant={statusColors[mockInvoice.status]}>
-                  {mockInvoice.status.charAt(0).toUpperCase() + mockInvoice.status.slice(1)}
+                <Badge variant={statusColors[invoice.status]}>
+                  {invoice.status.charAt(0).toUpperCase() +
+                    invoice.status.slice(1)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">Issue Date</div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Issue Date
+                  </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    {new Date(mockInvoice.issue_date).toLocaleDateString()}
+                    {format(new Date(invoice.issueDate), "MMM d, yyyy")}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">Due Date</div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Due Date
+                  </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    {new Date(mockInvoice.due_date).toLocaleDateString()}
+                    {format(new Date(invoice.dueDate), "MMM d, yyyy")}
                   </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-2">Bill To</div>
-                <div>
-                  <div className="font-medium">{mockInvoice.client.name}</div>
-                  <div className="text-sm text-muted-foreground">{mockInvoice.client.email}</div>
                 </div>
               </div>
 
               <Separator />
 
+              {/* Items */}
               <div>
                 <h3 className="font-medium mb-4">Items</h3>
                 <div className="space-y-2">
@@ -141,44 +180,60 @@ export default function InvoiceDetail() {
                     <div className="col-span-2 text-right">Rate</div>
                     <div className="col-span-2 text-right">Amount</div>
                   </div>
-                  
-                  {mockInvoice.items.map((item) => (
-                    <div key={item.id} className="grid grid-cols-12 gap-4 text-sm py-2 border-b">
+                  {invoice.items.map((item, index) => (
+                    <div key={index} className="grid grid-cols-12 gap-4 py-2">
                       <div className="col-span-6">{item.description}</div>
-                      <div className="col-span-2 text-right">{item.quantity}</div>
                       <div className="col-span-2 text-right">
-                        ${item.rate.toFixed(2)}
+                        {item.quantity}
+                      </div>
+                      <div className="col-span-2 text-right">
+                        {formatter.format(item.unitPrice)}
                       </div>
                       <div className="col-span-2 text-right font-medium">
-                        ${item.amount.toFixed(2)}
+                        {formatter.format(item.amount)}
                       </div>
                     </div>
                   ))}
                 </div>
-                
-                <div className="mt-6 space-y-2">
+              </div>
+
+              <Separator />
+
+              {/* Totals */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>{formatter.format(invoice.subtotal)}</span>
+                </div>
+                {invoice.taxAmount > 0 && (
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>${mockInvoice.subtotal.toFixed(2)}</span>
+                    <span className="text-muted-foreground">
+                      Tax ({invoice.taxRate}%)
+                    </span>
+                    <span>{formatter.format(invoice.taxAmount)}</span>
                   </div>
+                )}
+                {invoice.discount > 0 && (
                   <div className="flex justify-between">
-                    <span>Tax (10%)</span>
-                    <span>${mockInvoice.tax_amount.toFixed(2)}</span>
+                    <span className="text-muted-foreground">Discount</span>
+                    <span>-{formatter.format(invoice.discount)}</span>
                   </div>
-                  <Separator />
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span>${mockInvoice.total.toFixed(2)}</span>
-                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total</span>
+                  <span>{formatter.format(invoice.total)}</span>
                 </div>
               </div>
 
-              {mockInvoice.notes && (
+              {invoice.notes && (
                 <>
                   <Separator />
                   <div>
-                    <h3 className="font-medium mb-2">Notes</h3>
-                    <p className="text-sm text-muted-foreground">{mockInvoice.notes}</p>
+                    <div className="text-sm font-medium text-muted-foreground mb-1">
+                      Notes
+                    </div>
+                    <p className="text-sm">{invoice.notes}</p>
                   </div>
                 </>
               )}
@@ -186,36 +241,28 @@ export default function InvoiceDetail() {
           </Card>
         </div>
 
-        <div className="lg:col-span-1">
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Reminder Timeline */}
+          <ReminderTimeline
+            reminders={reminders}
+            invoiceStatus={invoice.status}
+            onSendManual={handleSendReminder}
+            onCancelReminders={handleCancelReminders}
+            isSending={sendManualReminder.isPending}
+          />
+
+          {/* Client Info Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Invoice Summary</CardTitle>
+              <CardTitle>Client Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  <Badge variant={statusColors[mockInvoice.status]}>
-                    {mockInvoice.status.charAt(0).toUpperCase() + mockInvoice.status.slice(1)}
-                  </Badge>
+            <CardContent className="space-y-2">
+              <div>
+                <div className="text-sm font-medium text-muted-foreground">
+                  Client ID
                 </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Total Amount</span>
-                  <span className="font-medium">${mockInvoice.total.toFixed(2)}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Client</span>
-                  <span className="font-medium">{mockInvoice.client.name}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Created</span>
-                  <span className="font-medium">
-                    {new Date(mockInvoice.created_at).toLocaleDateString()}
-                  </span>
-                </div>
+                <div className="font-medium">{invoice.clientId}</div>
               </div>
             </CardContent>
           </Card>
