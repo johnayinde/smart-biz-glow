@@ -27,6 +27,7 @@ export interface CreateClientData {
   name: string;
   email: string;
   phone?: string;
+  website?: string;
   address?: {
     street?: string;
     city?: string;
@@ -83,7 +84,8 @@ class ClientService {
   }
 
   async createClient(data: CreateClientData) {
-    return apiService.post<Client>("/client", data);
+    const res = await apiService.post<Client>("/client", data);
+    return res.data;
   }
 
   async updateClient(id: string, data: UpdateClientData) {

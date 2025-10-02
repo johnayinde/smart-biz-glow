@@ -1,11 +1,12 @@
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+// src/components/clients/edit-client-dialog.tsx
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -16,105 +17,142 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Client } from "@/services/mockData";
+import { Separator } from "@/components/ui/separator";
+import { Client } from "@/services/clientService";
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+const clientSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   company: z.string().optional(),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  address: z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    postalCode: z.string().optional(),
-    country: z.string().optional(),
-  }),
   taxId: z.string().optional(),
   notes: z.string().optional(),
-  contactType: z.string(),
-  paymentTerms: z.string().optional(),
-  status: z.string(),
+  address: z
+    .object({
+      street: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      postalCode: z.string().optional(),
+      country: z.string().optional(),
+    })
+    .optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type ClientFormData = z.infer<typeof clientSchema>;
 
 interface EditClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   client: Client;
+  onSubmit: (data: ClientFormData) => void;
+  isSubmitting?: boolean;
 }
 
-export const EditClientDialog: React.FC<EditClientDialogProps> = ({
+export function EditClientDialog({
   open,
   onOpenChange,
   client,
-}) => {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  onSubmit,
+  isSubmitting = false,
+}: EditClientDialogProps) {
+  const form = useForm<ClientFormData>({
+    resolver: zodResolver(clientSchema),
     defaultValues: {
-      name: client.name || "",
-      email: client.email || "",
-      phone: client.phone || "",
-      company: client.company || "",
-      website: client.website || "",
+      name: "",
+      email: "",
+      phone: "",
+      company: "",
+      website: "",
+      taxId: "",
+      notes: "",
       address: {
-        street: client.address?.street || "",
-        city: client.address?.city || "",
-        state: client.address?.state || "",
-        postalCode: client.address?.postalCode || "",
-        country: client.address?.country || "",
+        street: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "",
       },
-      taxId: client.taxId || "",
-      notes: client.notes || "",
-      contactType: client.contactType || "business",
-      paymentTerms: client.paymentTerms || "net30",
-      status: client.status || "active",
     },
   });
 
-  const onSubmit = (values: FormValues) => {
-    console.log("Updating client with:", values);
-    toast({
-      title: "Client Updated",
-      description: `${values.name}'s information has been updated.`,
-    });
+  // Update form values when client changes
+  useEffect(() => {
+    if (client) {
+      form.reset({
+        name: client.name || "",
+        email: client.email || "",
+        phone: client.phone || "",
+        company: client.company || "",
+        website: "",
+        taxId: client.taxId || "",
+        notes: client.notes || "",
+        address: {
+          street: client.address?.street || "",
+          city: client.address?.city || "",
+          state: client.address?.state || "",
+          postalCode: client.address?.postalCode || "",
+          country: client.address?.country || "",
+        },
+      });
+    }
+  }, [client, form]);
+
+  const handleSubmit = (data: ClientFormData) => {
+    // Clean up empty optional fields
+    const cleanedData = {
+      ...data,
+      phone: data.phone || undefined,
+      company: data.company || undefined,
+      website: data.website || undefined,
+      taxId: data.taxId || undefined,
+      notes: data.notes || undefined,
+      address: {
+        street: data.address?.street || undefined,
+        city: data.address?.city || undefined,
+        state: data.address?.state || undefined,
+        postalCode: data.address?.postalCode || undefined,
+        country: data.address?.country || undefined,
+      },
+    };
+
+    onSubmit(cleanedData);
+  };
+
+  const handleClose = () => {
     onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Client</DialogTitle>
           <DialogDescription>
-            Update the client's information below.
+            Update client information. Make changes to the fields below.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-6"
+          >
+            {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-medium mb-2">Basic Information</h3>
+              <h3 className="text-lg font-medium mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>Name *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter client name" {...field} />
+                        <Input placeholder="John Doe" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -125,9 +163,13 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Email *</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Email address" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="john@example.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -138,9 +180,9 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                      <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="Phone number" {...field} />
+                        <Input placeholder="+1 (555) 000-0000" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -148,23 +190,13 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                 />
                 <FormField
                   control={form.control}
-                  name="contactType"
+                  name="company"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select client type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="individual">Individual</SelectItem>
-                          <SelectItem value="business">Business</SelectItem>
-                          <SelectItem value="nonprofit">Non-profit</SelectItem>
-                          <SelectItem value="government">Government</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Company</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Acme Corp" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -174,22 +206,10 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
 
             <Separator />
 
+            {/* Business Details */}
             <div>
-              <h3 className="text-lg font-medium mb-2">Business Details</h3>
+              <h3 className="text-lg font-medium mb-4">Business Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="company"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Company name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="website"
@@ -208,56 +228,10 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                   name="taxId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tax ID / VAT Number</FormLabel>
+                      <FormLabel>Tax ID / VAT</FormLabel>
                       <FormControl>
-                        <Input placeholder="Tax identification number" {...field} />
+                        <Input placeholder="XX-XXXXXXX" {...field} />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="paymentTerms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Payment Terms</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select payment terms" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="immediate">Due immediately</SelectItem>
-                          <SelectItem value="net15">Net 15 days</SelectItem>
-                          <SelectItem value="net30">Net 30 days</SelectItem>
-                          <SelectItem value="net60">Net 60 days</SelectItem>
-                          <SelectItem value="custom">Custom</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select client status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -267,9 +241,10 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
 
             <Separator />
 
+            {/* Address */}
             <div>
-              <h3 className="text-lg font-medium mb-2">Address Information</h3>
-              <div className="grid grid-cols-1 gap-4">
+              <h3 className="text-lg font-medium mb-4">Address</h3>
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="address.street"
@@ -277,7 +252,7 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                     <FormItem>
                       <FormLabel>Street Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="Street address" {...field} />
+                        <Input placeholder="123 Main St" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -291,7 +266,7 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                       <FormItem>
                         <FormLabel>City</FormLabel>
                         <FormControl>
-                          <Input placeholder="City" {...field} />
+                          <Input placeholder="New York" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -304,7 +279,7 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                       <FormItem>
                         <FormLabel>State / Province</FormLabel>
                         <FormControl>
-                          <Input placeholder="State or province" {...field} />
+                          <Input placeholder="NY" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -317,7 +292,7 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                       <FormItem>
                         <FormLabel>Postal Code</FormLabel>
                         <FormControl>
-                          <Input placeholder="Postal code" {...field} />
+                          <Input placeholder="10001" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -330,7 +305,7 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                       <FormItem>
                         <FormLabel>Country</FormLabel>
                         <FormControl>
-                          <Input placeholder="Country" {...field} />
+                          <Input placeholder="United States" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -342,6 +317,7 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
 
             <Separator />
 
+            {/* Notes */}
             <div>
               <FormField
                 control={form.control}
@@ -350,30 +326,35 @@ export const EditClientDialog: React.FC<EditClientDialogProps> = ({
                   <FormItem>
                     <FormLabel>Notes</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Additional notes about the client"
-                        className="min-h-[100px]"
+                      <Textarea
+                        placeholder="Additional notes about this client..."
+                        rows={4}
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Include any relevant information that might help when working with this client.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {/* Form Actions */}
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit">Update Client</Button>
-            </DialogFooter>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Updating..." : "Update Client"}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-};
+}

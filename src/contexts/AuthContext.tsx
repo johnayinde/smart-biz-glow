@@ -39,6 +39,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkAuth = async () => {
+    const storedToken = localStorage.getItem("auth_token");
+    if (storedToken) {
+      apiService.setToken(storedToken);
+    }
+
     const token = apiService.getToken();
     console.log("Checking auth, token:", token);
 

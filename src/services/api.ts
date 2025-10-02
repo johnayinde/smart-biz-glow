@@ -5,9 +5,6 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-
 const SERVICE_URLS = {
   auth: import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:4001",
   client: import.meta.env.VITE_CLIENT_SERVICE_URL || "http://localhost:4004",
@@ -19,17 +16,24 @@ const SERVICE_URLS = {
     import.meta.env.VITE_ANALYTICS_SERVICE_URL || "http://localhost:4008",
 };
 
-const GATEWAY_URL =
-  import.meta.env.VITE_API_GATEWAY_URL || "http://localhost:4000/api";
-
 function getServiceUrl(path: string): string {
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
   // Direct mode - route to specific service
-  if (path.startsWith("/auth")) return SERVICE_URLS.auth;
-  if (path.startsWith("/client")) return SERVICE_URLS.client;
-  if (path.startsWith("/invoice")) return SERVICE_URLS.invoice;
-  if (path.startsWith("/payment")) return SERVICE_URLS.payment;
-  if (path.startsWith("/reminder")) return SERVICE_URLS.reminder;
-  if (path.startsWith("/analytics")) return SERVICE_URLS.analytics;
+  // if (path.startsWith("/auth")) return SERVICE_URLS.auth;
+  // if (path.startsWith("/client")) return SERVICE_URLS.client;
+  // if (path.startsWith("/invoice")) return SERVICE_URLS.invoice;
+  // if (path.startsWith("/payment")) return SERVICE_URLS.payment;
+  // if (path.startsWith("/reminder")) return SERVICE_URLS.reminder;
+  // if (path.startsWith("/analytics")) return SERVICE_URLS.analytics;
+
+  if (cleanPath.startsWith("auth")) return SERVICE_URLS.auth;
+  if (cleanPath.startsWith("client")) return SERVICE_URLS.client;
+  if (cleanPath.startsWith("invoice")) return SERVICE_URLS.invoice;
+  if (cleanPath.startsWith("payment")) return SERVICE_URLS.payment;
+  if (cleanPath.startsWith("reminder")) return SERVICE_URLS.reminder;
+  if (cleanPath.startsWith("analytics")) return SERVICE_URLS.analytics;
+
+  return SERVICE_URLS.auth; // fallback
 
   return SERVICE_URLS.auth; // fallback
 }
@@ -54,22 +58,32 @@ class APIService {
   private token: string | null = null;
 
   constructor() {
+    this.token = localStorage.getItem("auth_token");
     this.client = axios.create({
       headers: {
         "Content-Type": "application/json",
       },
-      timeout: 30000,
+      timeout: 10000,
     });
 
     // Load token from localStorage on initialization
-    this.token = localStorage.getItem("auth_token");
     if (this.token) {
       this.setAuthHeader(this.token);
     }
 
+    // this.setupInterceptors();
+
     // Request interceptor
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
+        if (!this.token) {
+          this.token = localStorage.getItem("auth_token");
+        }
+
+        if (this.token && !config.headers.Authorization) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+
         const baseURL = getServiceUrl(config.url || "");
         config.baseURL = baseURL;
 
@@ -108,7 +122,6 @@ class APIService {
                 { refreshToken },
                 { baseURL: refreshUrl }
               );
-
               if (response.data.success && response.data.data.accessToken) {
                 const newToken = response.data.data.accessToken;
                 this.setToken(newToken);
@@ -164,8 +177,9 @@ class APIService {
   }
 
   getToken() {
-    return localStorage.getItem("auth_token");
-    // return this.token;
+    // Always get fresh token from localStorage
+    this.token = localStorage.getItem("auth_token");
+    return this.token;
   }
 
   // Generic request methods that handle the wrapped response
