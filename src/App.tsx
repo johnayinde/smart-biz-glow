@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,9 +11,18 @@ import { PublicLayout } from "@/components/layout/public-layout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
+
+// Public pages
 import Landing from "./pages/landing";
 import About from "./pages/about";
 import Contact from "./pages/contact";
+
+// Auth pages
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import PasswordReset from "./pages/auth/PasswordReset";
+
+// Protected pages
 import Dashboard from "./pages/dashboard";
 import Invoices from "./pages/invoices";
 import InvoiceTemplates from "./pages/invoice-templates";
@@ -24,9 +34,6 @@ import Insights from "./pages/insights";
 import Settings from "./pages/settings";
 import Notifications from "./pages/notifications";
 import InvoiceDetail from "./pages/invoice-detail";
-import Login from "./pages/auth/Login";
-import Signup from "./pages/auth/Signup";
-import PasswordReset from "./pages/auth/PasswordReset";
 import Subscription from "./pages/subscription";
 import NotFound from "./pages/not-found";
 
@@ -46,7 +53,7 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
               </Route>
 
-              {/* Auth routes (no layout) */}
+              {/* Auth routes (no layout, redirect if authenticated) */}
               <Route element={<PublicRoute />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
@@ -54,27 +61,27 @@ const App = () => (
               </Route>
 
               {/* Protected routes (require authentication) */}
-              {/* <Route element={<ProtectedRoute />}> */}
-              <Route element={<MainLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/invoices/:id" element={<InvoiceDetail />} />
-                <Route
-                  path="/invoice-templates"
-                  element={<InvoiceTemplates />}
-                />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/clients/:id" element={<ClientDetail />} />
-                <Route path="/payments" element={<Payments />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/insights" element={<Insights />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/subscription" element={<Subscription />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MainLayout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/invoices" element={<Invoices />} />
+                  <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                  <Route
+                    path="/invoice-templates"
+                    element={<InvoiceTemplates />}
+                  />
+                  <Route path="/clients" element={<Clients />} />
+                  <Route path="/clients/:id" element={<ClientDetail />} />
+                  <Route path="/payments" element={<Payments />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/insights" element={<Insights />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/subscription" element={<Subscription />} />
+                </Route>
               </Route>
-              {/* </Route> */}
 
-              {/* Catch-all route */}
+              {/* 404 Not Found */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
@@ -85,33 +92,3 @@ const App = () => (
 );
 
 export default App;
-
-// import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// import { BrowserRouter } from "react-router-dom";
-// import { AuthProvider } from "@/context/auth-context";
-// import { Toaster } from "@/components/ui/toaster";
-// import { AppRoutes } from "@/routes";
-
-// const queryClient = new QueryClient({
-//   defaultOptions: {
-//     queries: {
-//       staleTime: 30000, // 30 seconds
-//       retry: 1,
-//     },
-//   },
-// });
-
-// function App() {
-//   return (
-//     <QueryClientProvider client={queryClient}>
-//       <BrowserRouter>
-//         <AuthProvider>
-//           <AppRoutes />
-//           <Toaster />
-//         </AuthProvider>
-//       </BrowserRouter>
-//     </QueryClientProvider>
-//   );
-// }
-
-// export default App;

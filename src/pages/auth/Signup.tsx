@@ -1,17 +1,10 @@
-import React, { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+// src/pages/auth/Signup.tsx
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -20,226 +13,242 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Layers, UserPlus, Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-
-const formSchema = z
-  .object({
-    firstname: z
-      .string()
-      .min(2, { message: "Firstname must be at least 2 characters" }),
-    lastname: z
-      .string()
-      .min(2, { message: "lastname must be at least 2 characters" }),
-    companyName: z.string().min(2, {
-      message: "Company/Organization name must be at least 2 characters",
-    }),
-    email: z.string().email({ message: "Please enter a valid email address" }),
-    password: z
-      .string()
-      .min(8, { message: "Password must be at least 8 characters" }),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function Signup() {
-  const { signup } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
+  const { register } = useAuth();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      firstname: "",
-      lastname: "",
-      companyName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    companyName: "",
   });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      await signup(
-        values.firstname,
-        values.lastname,
-        values.email,
-        values.password,
-        values.companyName
-      );
-    } catch (error) {
-      // Error handling is done in the AuthContext
-      console.error("Signup error:", error);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const validateForm = () => {
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return false;
     }
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await register(
+        formData.email,
+        formData.password,
+        formData.firstName,
+        formData.lastName,
+        formData.companyName || undefined
+      );
+
+      setRegistrationSuccess(true);
+
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000);
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (registrationSuccess) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-muted/20 px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex justify-center mb-4">
+              <CheckCircle2 className="h-16 w-16 text-green-500" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-center">
+              Registration Successful!
+            </CardTitle>
+            <CardDescription className="text-center">
+              Please check your email to verify your account before logging in.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center text-muted-foreground">
+            <p>You will be redirected to the login page shortly...</p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => navigate("/login")} className="w-full">
+              Go to Login
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-muted/20 px-4 py-8">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2">
-              <Layers className="h-8 w-8 text-primary" />
-              <h2 className="text-2xl font-semibold tracking-tight">
-                SmartInvoice
-              </h2>
-            </div>
-          </div>
-          <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>
-            Enter your details to create a new account
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">
+            Create an Account
+          </CardTitle>
+          <CardDescription className="text-center">
+            Enter your information to get started
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="firstname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company/Organization Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Acme Inc." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  placeholder="John"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                  autoComplete="given-name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                  autoComplete="family-name"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
                 name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                type="email"
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                autoComplete="email"
               />
-              <FormField
-                control={form.control}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Company Name (Optional)</Label>
+              <Input
+                id="companyName"
+                name="companyName"
+                type="text"
+                placeholder="Acme Inc."
+                value={formData.companyName}
+                onChange={handleChange}
+                disabled={isLoading}
+                autoComplete="organization"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
                 name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                autoComplete="new-password"
               />
-              <FormField
-                control={form.control}
+              <p className="text-xs text-muted-foreground">
+                Must be at least 8 characters long
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
                 name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                          }
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                type="password"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                autoComplete="new-password"
               />
-              <Button
-                type="submit"
-                className="w-full mt-2"
-                disabled={form.formState.isSubmitting}
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex flex-col space-y-4">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                "Create Account"
+              )}
+            </Button>
+
+            <p className="text-sm text-center text-muted-foreground">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-primary font-medium hover:underline"
               >
-                <UserPlus className="mr-2 h-4 w-4" />
-                {form.formState.isSubmitting
-                  ? "Creating Account..."
-                  : "Create Account"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-center text-sm text-muted-foreground">
-            <span>Already have an account? </span>
-            <Link
-              to="/login"
-              className="text-primary underline-offset-4 hover:underline"
-            >
-              Sign in
-            </Link>
-          </div>
-        </CardFooter>
+                Sign in
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );

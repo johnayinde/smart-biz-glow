@@ -1,3 +1,4 @@
+// src/contexts/AuthContext.tsx
 import {
   createContext,
   useContext,
@@ -7,6 +8,7 @@ import {
 } from "react";
 import { authService, User } from "@/services/authService";
 import { apiService } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
@@ -16,10 +18,12 @@ interface AuthContextType {
     email: string,
     password: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    companyName?: string
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,30 +31,74 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
+  // Check authentication status on mount
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      apiService.setToken(token);
-      authService.getCurrentUser().then(({ data, error }) => {
-        if (data && !error) {
-          setUser(data);
-        } else {
-          localStorage.removeItem("auth_token");
-        }
-        setLoading(false);
-      });
-    } else {
-      setLoading(false);
-    }
+    checkAuth();
   }, []);
 
+  const checkAuth = async () => {
+    const token = apiService.getToken();
+    console.log("Checking auth, token:", token);
+
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await authService.getCurrentUser();
+      console.log("Auth check data:", data, "error:", error);
+
+      if (data && !error) {
+        setUser(data);
+      } else {
+        // Token exists but invalid - clear it
+        apiService.clearAuth();
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      apiService.clearAuth();
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const login = async (email: string, password: string) => {
-    const { data, error } = await authService.login({ email, password });
-    if (error) throw new Error(error);
-    if (data) {
-      setUser(data.user);
+    try {
+      const { data, error, message } = await authService.login({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: message || error,
+          variant: "destructive",
+        });
+        throw new Error(error);
+      }
+
+      if (data) {
+        localStorage.setItem("auth_token", data.accessToken);
+        localStorage.setItem("refresh_token", data.refreshToken);
+
+        // Set token in API service
+        apiService.setToken(data.accessToken);
+        setUser(data.user);
+
+        toast({
+          title: "Welcome back!",
+          description: `Logged in as ${data.user.email}`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      throw error;
     }
   };
 
@@ -58,23 +106,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    companyName?: string
   ) => {
-    const { data, error } = await authService.register({
-      email,
-      password,
-      firstName,
-      lastName,
-    });
-    if (error) throw new Error(error);
-    if (data) {
-      setUser(data.user);
+    try {
+      const { data, error, message } = await authService.register({
+        email,
+        password,
+        firstName,
+        lastName,
+        companyName,
+      });
+
+      if (error) {
+        toast({
+          title: "Registration Failed",
+          description: message || error,
+          variant: "destructive",
+        });
+        throw new Error(error);
+      }
+
+      if (data) {
+        toast({
+          title: "Registration Successful!",
+          description: "Please check your email to verify your account.",
+        });
+
+        // Note: User is NOT logged in after registration
+        // They must verify email first
+        // So we don't set user state here
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      throw error;
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still clear local state even if backend call fails
+      setUser(null);
+      apiService.clearAuth();
+    }
+  };
+
+  const refreshUser = async () => {
+    try {
+      const { data } = await authService.getCurrentUser();
+      if (data) {
+        setUser(data);
+      }
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+    }
   };
 
   return (
@@ -86,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         isAuthenticated: !!user,
+        refreshUser,
       }}
     >
       {children}

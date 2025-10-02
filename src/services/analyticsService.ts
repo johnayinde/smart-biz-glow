@@ -1,42 +1,179 @@
+// src/services/analyticsService.ts
 import { apiService } from "./api";
 
 export interface DashboardStats {
+  totalClients: number;
   totalInvoices: number;
-  draftInvoices: number;
-  sentInvoices: number;
-  paidInvoices: number;
-  overdueInvoices: number;
   totalRevenue: number;
   pendingAmount: number;
-  overdueAmount: number;
-  paidAmount: number;
-  totalClients: number;
-  remindersSent: number;
-  scheduledReminders: number;
-  collectionRate: number;
-  averageInvoiceValue: number;
+  overdueInvoices: number;
+  remindersSentThisWeek: number;
+  averagePaymentTime: number;
+  reminderEffectiveness: number;
+  revenueGrowth: number;
+  clientGrowth: number;
+}
+
+export interface RevenueData {
+  month: string;
+  revenue: number;
+  invoices: number;
+}
+
+export interface ClientInsight {
+  clientId: string;
+  clientName: string;
+  totalInvoices: number;
+  totalRevenue: number;
+  averagePaymentTime: number;
+  overdueCount: number;
+}
+
+export interface ReminderPerformance {
+  totalRemindersSent: number;
+  remindersByType: {
+    before_due: number;
+    overdue_3: number;
+    overdue_7: number;
+  };
+  paymentsAfterReminder: number;
+  avgTimeToPayAfterReminder: number;
+  effectivenessRate: number;
+}
+
+export interface PaymentTrend {
+  date: string;
+  amount: number;
+  count: number;
+}
+
+export interface InvoiceStatusBreakdown {
+  status: string;
+  count: number;
+  totalAmount: number;
+}
+
+export interface AnalyticsFilters {
+  startDate?: string;
+  endDate?: string;
+  clientId?: string;
+  period?: "week" | "month" | "quarter" | "year";
 }
 
 class AnalyticsService {
-  async getDashboardStats(): Promise<{
-    data: DashboardStats | null;
-    error: string | null;
-  }> {
-    return apiService.get<DashboardStats>("/analytics/analytics/dashboard");
+  async getDashboardStats(filters?: AnalyticsFilters) {
+    const params = new URLSearchParams();
+
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.period) params.append("period", filters.period);
+
+    const queryString = params.toString();
+    const url = `/analytics/dashboard-stats${
+      queryString ? `?${queryString}` : ""
+    }`;
+
+    return apiService.get<DashboardStats>(url);
   }
 
-  async getRevenueAnalytics(
-    period: "week" | "month" | "year" = "month"
-  ): Promise<{ data: any; error: string | null }> {
-    return apiService.get(`/analytics/analytics/revenue?period=${period}`);
+  async getRevenueData(filters?: AnalyticsFilters) {
+    const params = new URLSearchParams();
+
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.period) params.append("period", filters.period);
+
+    const queryString = params.toString();
+    const url = `/analytics/revenue${queryString ? `?${queryString}` : ""}`;
+
+    return apiService.get<{ data: RevenueData[] }>(url);
   }
 
-  async getReminderAnalytics(): Promise<{ data: any; error: string | null }> {
-    return apiService.get("/analytics/analytics/reminders");
+  async getClientInsights(filters?: AnalyticsFilters) {
+    const params = new URLSearchParams();
+
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.clientId) params.append("clientId", filters.clientId);
+
+    const queryString = params.toString();
+    const url = `/analytics/client-insights${
+      queryString ? `?${queryString}` : ""
+    }`;
+
+    return apiService.get<{ clients: ClientInsight[] }>(url);
   }
 
-  async getClientInsights(): Promise<{ data: any; error: string | null }> {
-    return apiService.get("/analytics/analytics/clients");
+  async getReminderPerformance(filters?: AnalyticsFilters) {
+    const params = new URLSearchParams();
+
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+
+    const queryString = params.toString();
+    const url = `/analytics/reminder-performance${
+      queryString ? `?${queryString}` : ""
+    }`;
+
+    return apiService.get<ReminderPerformance>(url);
+  }
+
+  async getPaymentTrends(filters?: AnalyticsFilters) {
+    const params = new URLSearchParams();
+
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.period) params.append("period", filters.period);
+
+    const queryString = params.toString();
+    const url = `/analytics/payment-trends${
+      queryString ? `?${queryString}` : ""
+    }`;
+
+    return apiService.get<{ trends: PaymentTrend[] }>(url);
+  }
+
+  async getInvoiceStatusBreakdown(filters?: AnalyticsFilters) {
+    const params = new URLSearchParams();
+
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+
+    const queryString = params.toString();
+    const url = `/analytics/invoice-status${
+      queryString ? `?${queryString}` : ""
+    }`;
+
+    return apiService.get<{ breakdown: InvoiceStatusBreakdown[] }>(url);
+  }
+
+  async exportData(
+    type: "invoices" | "payments" | "clients",
+    filters?: AnalyticsFilters
+  ) {
+    const params = new URLSearchParams();
+
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+
+    const queryString = params.toString();
+    const url = `/analytics/export/${type}${
+      queryString ? `?${queryString}` : ""
+    }`;
+
+    // This returns a blob/CSV file
+    const response = await fetch(`${apiService.getToken()}${url}`, {
+      headers: {
+        Authorization: `Bearer ${apiService.getToken()}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to export data");
+    }
+
+    const blob = await response.blob();
+    return blob;
   }
 }
 
