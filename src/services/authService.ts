@@ -53,13 +53,13 @@ class AuthService {
     const result = await apiService.post<AuthResponse>("/auth/login", data);
     console.log({ result });
 
-    if (result && result.accessToken) {
+    if (result && result.data.accessToken) {
       // Store both tokens
-      apiService.setToken(result.accessToken);
-      apiService.setRefreshToken(result.refreshToken);
+      apiService.setToken(result.data.accessToken);
+      apiService.setRefreshToken(result.data.refreshToken);
     }
 
-    return result;
+    return result.data;
   }
 
   async register(data: RegisterData) {

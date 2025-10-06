@@ -1,4 +1,5 @@
 // src/services/api.ts
+
 import axios, {
   AxiosInstance,
   AxiosError,
@@ -20,21 +21,27 @@ function getServiceUrl(path: string): string {
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
 
   if (cleanPath.startsWith("auth")) return SERVICE_URLS.auth;
-  if (cleanPath.startsWith("client")) return SERVICE_URLS.client; // matches "client" and "clients"
+  if (cleanPath.startsWith("client")) return SERVICE_URLS.client;
   if (cleanPath.startsWith("invoice")) return SERVICE_URLS.invoice;
   if (cleanPath.startsWith("payment")) return SERVICE_URLS.payment;
   if (cleanPath.startsWith("reminder")) return SERVICE_URLS.reminder;
   if (cleanPath.startsWith("analytics")) return SERVICE_URLS.analytics;
 
-  return SERVICE_URLS.auth; // single fallback
+  return SERVICE_URLS.auth;
 }
 
-// Backend response envelope
+// ✅ Backend response envelope (standardized)
 interface ApiResponse<T> {
   success: boolean;
   data: T;
-  message: string;
+  message?: string;
   statusCode?: number;
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  };
 }
 
 interface ApiErrorResponse {
@@ -67,7 +74,6 @@ class APIService {
         const baseURL = getServiceUrl(config.url || "");
         config.baseURL = baseURL;
 
-        // Optional: remove in prod
         console.log(
           `🚀 ${config.method?.toUpperCase()} ${baseURL}${config.url}`
         );
@@ -93,7 +99,6 @@ class APIService {
               this.setToken(newToken);
 
               if (error.config) {
-                // error.config.headers = error.config.headers || {};
                 error.config.headers.Authorization = `Bearer ${newToken}`;
                 error.config.baseURL = getServiceUrl(error.config.url || "");
                 return this.client(error.config);
@@ -108,14 +113,13 @@ class APIService {
           }
         }
 
-        // Normalize & throw so React Query can catch
         const normalized = this.normalizeError(error);
         return Promise.reject(normalized);
       }
     );
   }
 
-  // ---- auth helpers ----
+  // Auth helpers
   setAuthHeader(token: string) {
     this.client.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   }
@@ -141,7 +145,7 @@ class APIService {
     return this.token;
   }
 
-  // ---- normalized error ----
+  // Normalized error
   private normalizeError(err: unknown) {
     if (axios.isAxiosError<ApiErrorResponse>(err)) {
       const msg =
@@ -156,26 +160,34 @@ class APIService {
     return new Error(String(err));
   }
 
-  // ---- unified request helpers that return T directly ----
-  async get<T>(url: string, config = {}): Promise<T> {
+  // ✅ FIXED: Return full ApiResponse, not just data
+  async get<T>(url: string, config = {}): Promise<ApiResponse<T>> {
     const resp = await this.client.get<ApiResponse<T>>(url, config);
-    return resp.data.data; // ✅ return payload only
+    return resp.data; // Return entire response with success, data, meta
   }
-  async post<T>(url: string, data?: any, config = {}): Promise<T> {
+
+  async post<T>(url: string, data?: any, config = {}): Promise<ApiResponse<T>> {
     const resp = await this.client.post<ApiResponse<T>>(url, data, config);
-    return resp.data.data;
+    return resp.data;
   }
-  async put<T>(url: string, data?: any, config = {}): Promise<T> {
+
+  async put<T>(url: string, data?: any, config = {}): Promise<ApiResponse<T>> {
     const resp = await this.client.put<ApiResponse<T>>(url, data, config);
-    return resp.data.data;
+    return resp.data;
   }
-  async patch<T>(url: string, data?: any, config = {}): Promise<T> {
+
+  async patch<T>(
+    url: string,
+    data?: any,
+    config = {}
+  ): Promise<ApiResponse<T>> {
     const resp = await this.client.patch<ApiResponse<T>>(url, data, config);
-    return resp.data.data;
+    return resp.data;
   }
-  async delete<T>(url: string, config = {}): Promise<T> {
+
+  async delete<T = void>(url: string, config = {}): Promise<ApiResponse<T>> {
     const resp = await this.client.delete<ApiResponse<T>>(url, config);
-    return resp.data.data;
+    return resp.data;
   }
 }
 

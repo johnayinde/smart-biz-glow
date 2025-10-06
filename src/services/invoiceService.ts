@@ -11,6 +11,13 @@ export interface InvoiceItem {
   total: number;
 }
 
+export type InvoiceSortBy =
+  | "invoiceNumber"
+  | "issueDate"
+  | "dueDate"
+  | "total"
+  | "createdAt"
+  | "status";
 export interface ReminderConfig {
   enabled: boolean;
   lastReminderSent?: Date;
@@ -21,6 +28,7 @@ export interface ReminderConfig {
 
 export interface Invoice {
   _id: string;
+  id: string;
   userId: string;
   clientId: string;
   invoiceNumber: string;
@@ -84,7 +92,7 @@ export interface InvoiceFilters {
   startDate?: string;
   endDate?: string;
   search?: string;
-  sortBy?: string;
+  sortBy?: InvoiceSortBy;
   sortOrder?: "asc" | "desc";
 }
 
@@ -110,58 +118,42 @@ class InvoiceService {
     if (filters?.sortBy) params.append("sortBy", filters.sortBy);
     if (filters?.sortOrder) params.append("sortOrder", filters.sortOrder);
 
+    if (filters?.sortBy) {
+      params.append("sortBy", filters.sortBy);
+    }
+
+    if (filters?.sortOrder && filters?.sortBy) {
+      params.append("sortOrder", filters.sortOrder);
+    }
     const queryString = params.toString();
     const url = `/invoices${queryString ? `?${queryString}` : ""}`;
 
-    return apiService.get<InvoicesListResponse>(url);
+    // ✅ Returns { success, data: Invoice[], meta }
+    return apiService.get<Invoice[]>(url);
   }
 
   async getInvoiceById(id: string) {
-    return apiService.get<Invoice>(`/invoice/${id}`);
+    return apiService.get<Invoice>(`/invoices/${id}`);
   }
 
   async createInvoice(data: CreateInvoiceData) {
-    return apiService.post<Invoice>("/invoice", data);
+    return apiService.post<Invoice>("/invoices", data);
   }
 
   async updateInvoice(id: string, data: UpdateInvoiceData) {
-    return apiService.patch<Invoice>(`/invoice/${id}`, data);
+    return apiService.patch<Invoice>(`/invoices/${id}`, data);
   }
 
   async deleteInvoice(id: string) {
-    return apiService.delete(`/invoice/${id}`);
-  }
-
-  async updateInvoiceStatus(id: string, status: InvoiceStatus) {
-    return apiService.patch<Invoice>(`/invoice/${id}`, { status });
+    return apiService.delete(`/invoices/${id}`);
   }
 
   async markAsPaid(id: string) {
-    return this.updateInvoiceStatus(id, "paid");
+    return apiService.post<Invoice>(`/invoices/${id}/mark-paid`, {});
   }
 
   async sendInvoice(id: string) {
-    return this.updateInvoiceStatus(id, "sent");
-  }
-
-  async getInvoiceStats() {
-    return apiService.get<InvoiceStats>("/invoice/stats");
-  }
-
-  async downloadInvoicePDF(id: string) {
-    // This returns a blob/pdf file
-    const response = await fetch(`${apiService.get}/${id}/download`, {
-      headers: {
-        Authorization: `Bearer ${apiService.getToken()}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to download invoice");
-    }
-
-    const blob = await response.blob();
-    return blob;
+    return apiService.post<Invoice>(`/invoices/${id}/send`, {});
   }
 }
 

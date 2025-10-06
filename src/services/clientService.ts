@@ -1,9 +1,8 @@
-// src/services/clientService.ts
 import { apiService } from "./api";
 
-// ===== Types matching backend schema =====
 export interface Client {
   _id: string;
+  id: string;
   userId: string;
   name: string;
   email: string;
@@ -18,7 +17,7 @@ export interface Client {
   company?: string;
   taxId?: string;
   notes?: string;
-  isActive: boolean;
+  status: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
 }
@@ -41,7 +40,7 @@ export interface CreateClientData {
 }
 
 export interface UpdateClientData extends Partial<CreateClientData> {
-  isActive?: boolean;
+  status?: "active" | "inactive";
 }
 
 export interface ClientsListResponse {
@@ -59,41 +58,43 @@ export interface ClientFilters {
   page?: number;
   limit?: number;
   search?: string;
-  isActive?: boolean;
+  status?: "active" | "inactive";
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
 
 class ClientService {
+  // ✅ FIXED: Handle full response structure
   async getClients(filters?: ClientFilters) {
     const params = new URLSearchParams();
 
     if (filters?.page) params.append("page", filters.page.toString());
     if (filters?.limit) params.append("limit", filters.limit.toString());
     if (filters?.search) params.append("search", filters.search);
-    if (filters?.isActive !== undefined)
-      params.append("isActive", filters.isActive.toString());
+    if (filters?.status !== undefined)
+      params.append("status", filters.status.toString());
     if (filters?.sortBy) params.append("sortBy", filters.sortBy);
     if (filters?.sortOrder) params.append("sortOrder", filters.sortOrder);
 
     const queryString = params.toString();
     const url = `/clients${queryString ? `?${queryString}` : ""}`;
 
-    const res = await apiService.get<ClientsListResponse>(url);
-    console.log(res);
-
-    return res;
+    // ✅ Returns { success, data: Client[], meta }
+    return apiService.get<Client[]>(url);
   }
 
   async getClientById(id: string) {
+    // ✅ Returns { success, data: Client }
     return apiService.get<Client>(`/clients/${id}`);
   }
 
   async createClient(data: CreateClientData) {
-    return await apiService.post<Client>("/clients", data);
+    return apiService.post<Client>("/clients", data);
   }
 
   async updateClient(id: string, data: UpdateClientData) {
+    console.log("Updating client:", id, data);
+
     return apiService.patch<Client>(`/clients/${id}`, data);
   }
 
@@ -102,11 +103,11 @@ class ClientService {
   }
 
   async archiveClient(id: string) {
-    return apiService.patch<Client>(`/clients/${id}`, { isActive: false });
+    return apiService.patch<Client>(`/clients/${id}`, { status: "inactive" });
   }
 
   async restoreClient(id: string) {
-    return apiService.patch<Client>(`/clients/${id}`, { isActive: true });
+    return apiService.patch<Client>(`/clients/${id}`, { status: "active" });
   }
 
   async searchClients(searchTerm: string) {
