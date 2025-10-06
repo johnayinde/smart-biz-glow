@@ -43,7 +43,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { clientService, Client } from "@/services/clientService";
+import {
+  clientService,
+  Client,
+  ClientsListResponse,
+} from "@/services/clientService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -75,21 +79,27 @@ export default function Clients() {
   const navigate = useNavigate();
 
   // Fetch clients with search and pagination
-  const {
-    data: clientsData,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["clients", page, searchTerm],
-    queryFn: () =>
-      clientService.getClients({
-        page,
-        limit: 10,
-        search: searchTerm || undefined,
-      }),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading, isFetching, error, refetch } =
+    useQuery<ClientsListResponse>({
+      queryKey: ["clients", { page, search: searchTerm }],
+      queryFn: async () => {
+        const res = await clientService.getClients({
+          page,
+          limit: 10,
+          search: searchTerm || undefined,
+        });
+      },
+      placeholderData: keepPreviousData,
+      staleTime: 30_000,
+    });
+  console.log({ data });
+  const clients: Client[] = data?.data ?? [];
+  const totalPages = data?.meta.totalPages ?? 1;
+  const currentPage = data?.meta.page ?? 1;
+  const total = data?.meta.total ?? 0;
+  console.log({ clients, totalPages, total, currentPage, isFetching });
+
+  // console.log({ clientsData });
 
   // Create client mutation
   const createMutation = useMutation({
@@ -275,9 +285,6 @@ export default function Clients() {
       </div>
     );
   }
-
-  const clients = clientsData?.data?.clients || [];
-  const totalPages = clientsData?.data?.totalPages || 1;
 
   return (
     <div className="space-y-6">

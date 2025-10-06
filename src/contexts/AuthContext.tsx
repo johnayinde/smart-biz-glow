@@ -1,18 +1,24 @@
 // src/contexts/AuthContext.tsx
+type NormalizedError = Error & { status?: number; detail?: string };
+
 import {
   createContext,
   useContext,
   useState,
   useEffect,
+  useMemo,
+  useCallback,
   ReactNode,
 } from "react";
-import { authService, User } from "@/services/authService";
+import { authService, User, RegisterResponse } from "@/services/authService";
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+
+  // Return types aligned with implementations:
   login: (email: string, password: string) => Promise<void>;
   register: (
     email: string,
@@ -20,10 +26,11 @@ interface AuthContextType {
     firstName: string,
     lastName: string,
     companyName?: string
-  ) => Promise<void>;
+  ) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
+
   isAuthenticated: boolean;
-  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,170 +40,159 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Check authentication status on mount
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  // ---- checkAuth ----
+  const checkAuth = useCallback(async () => {
+    let mounted = true;
 
-  const checkAuth = async () => {
-    const storedToken = localStorage.getItem("auth_token");
-    if (storedToken) {
-      apiService.setToken(storedToken);
-    }
+    // Seed token so /auth/me is authorized
+    const stored = localStorage.getItem("auth_token");
+    if (stored) apiService.setToken(stored);
 
     const token = apiService.getToken();
-    console.log("Checking auth, token:", token);
-
     if (!token) {
-      setLoading(false);
+      if (mounted) {
+        setUser(null);
+        setLoading(false);
+      }
       return;
     }
 
     try {
-      const { data, error } = await authService.getCurrentUser();
-      console.log("Auth check data:", data, "error:", error);
-
-      if (data && !error) {
-        setUser(data);
-      } else {
-        // Token exists but invalid - clear it
-        apiService.clearAuth();
-        setUser(null);
+      const me = await authService.getCurrentUser(); // throws on error
+      if (mounted) setUser(me);
+    } catch (e) {
+      const err = e as NormalizedError;
+      if (err.status === 401) {
+        apiService.clearAuth(); // invalid/expired after refresh attempt
       }
-    } catch (error) {
-      console.error("Auth check failed:", error);
-      apiService.clearAuth();
-      setUser(null);
+      if (mounted) setUser(null);
+      console.error("Auth check failed:", err.message, err.detail);
     } finally {
-      setLoading(false);
+      if (mounted) setLoading(false);
     }
-  };
 
-  const login = async (email: string, password: string) => {
-    try {
-      const { data, error, message } = await authService.login({
-        email,
-        password,
-      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-      if (error) {
-        toast({
-          title: "Login Failed",
-          description: message || error,
-          variant: "destructive",
-        });
-        throw new Error(error);
-      }
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!cancelled) await checkAuth();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [checkAuth]);
 
-      if (data) {
+  // ---- login ----
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const data = await authService.login({ email, password }); // { user, accessToken, refreshToken }
         localStorage.setItem("auth_token", data.accessToken);
         localStorage.setItem("refresh_token", data.refreshToken);
-
-        // Set token in API service
-        apiService.setToken(data.accessToken);
         setUser(data.user);
 
         toast({
           title: "Welcome back!",
           description: `Logged in as ${data.user.email}`,
         });
-      }
-    } catch (error: any) {
-      console.error("Login error:", error);
-      throw error;
-    }
-  };
-
-  const register = async (
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    companyName?: string
-  ) => {
-    try {
-      const { data, error, message } = await authService.register({
-        email,
-        password,
-        firstName,
-        lastName,
-        companyName,
-      });
-
-      if (error) {
+      } catch (err: any) {
         toast({
-          title: "Registration Failed",
-          description: message || error,
+          title: "Login Failed",
+          description: err?.message || "Unable to log in",
           variant: "destructive",
         });
-        throw new Error(error);
+        throw err;
       }
+    },
+    [toast]
+  );
 
-      if (data) {
+  // ---- register ----
+  const register = useCallback(
+    async (
+      email: string,
+      password: string,
+      firstName: string,
+      lastName: string,
+      companyName?: string
+    ): Promise<RegisterResponse> => {
+      try {
+        const res = await authService.register({
+          email,
+          password,
+          firstName,
+          lastName,
+          companyName,
+        });
+
         toast({
           title: "Registration Successful!",
           description: "Please check your email to verify your account.",
         });
 
-        // Note: User is NOT logged in after registration
-        // They must verify email first
-        // So we don't set user state here
+        return res; // { userId }
+      } catch (err: any) {
+        toast({
+          title: "Registration Failed",
+          description: err?.message || "Unable to register",
+          variant: "destructive",
+        });
+        throw err;
       }
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      throw error;
-    }
-  };
+    },
+    [toast]
+  );
 
-  const logout = async () => {
+  // ---- logout ----
+  const logout = useCallback(async () => {
     try {
-      await authService.logout();
+      await authService.logout(); // clears tokens server-side (we also clear locally in finally)
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      apiService.clearAuth();
       setUser(null);
-
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Still clear local state even if backend call fails
-      setUser(null);
-      apiService.clearAuth();
     }
-  };
+  }, [toast]);
 
-  const refreshUser = async () => {
+  // ---- refreshUser ----
+  const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
-      const { data } = await authService.getCurrentUser();
-      if (data) {
-        setUser(data);
-      }
-    } catch (error) {
-      console.error("Failed to refresh user:", error);
+      const me = await authService.getCurrentUser();
+      setUser(me);
+      return me;
+    } catch (err) {
+      console.error("Failed to refresh user:", err);
+      return null;
     }
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        logout,
-        isAuthenticated: !!user,
-        refreshUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      loading,
+      login,
+      register,
+      logout,
+      refreshUser,
+      isAuthenticated: !!user,
+    }),
+    [user, loading, login, register, logout, refreshUser]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 }

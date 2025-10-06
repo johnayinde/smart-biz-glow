@@ -8,6 +8,7 @@ export type PaymentMethod =
   | "check"
   | "paypal"
   | "other";
+
 export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
 
 export interface Payment {
@@ -38,6 +39,7 @@ export interface CreatePaymentData {
   reference?: string;
   notes?: string;
   paymentDate?: string;
+  currency?: string;
 }
 
 export interface UpdatePaymentData extends Partial<CreatePaymentData> {
@@ -50,6 +52,12 @@ export interface PaymentsListResponse {
   page: number;
   limit: number;
   totalPages: number;
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface PaymentFilters {
@@ -64,8 +72,19 @@ export interface PaymentFilters {
   sortOrder?: "asc" | "desc";
 }
 
+export interface PaymentStats {
+  totalRevenue: number;
+  completed: { count: number; amount: number };
+  pending: { count: number; amount: number };
+  failed: { count: number; amount: number };
+  refunded: { count: number; amount: number };
+  byMethod: {
+    [key: string]: { count: number; amount: number };
+  };
+}
+
 class PaymentService {
-  async getPayments(filters?: PaymentFilters) {
+  async getPayments(filters?: PaymentFilters): Promise<PaymentsListResponse> {
     const params = new URLSearchParams();
 
     if (filters?.page) params.append("page", filters.page.toString());
@@ -79,102 +98,108 @@ class PaymentService {
     if (filters?.sortOrder) params.append("sortOrder", filters.sortOrder);
 
     const queryString = params.toString();
-    const url = `/payment${queryString ? `?${queryString}` : ""}`;
+    const url = `/payments${queryString ? `?${queryString}` : ""}`;
 
-    return apiService.get<PaymentsListResponse>(url);
+    const response = await apiService.get<any>(url);
+
+    // Handle different response formats
+    if (response.data?.payments) {
+      return {
+        payments: response.data.payments,
+        total: response.data.meta?.total || response.data.total || 0,
+        page: response.data.meta?.page || response.data.page || 1,
+        limit: response.data.meta?.limit || response.data.limit || 10,
+        totalPages:
+          response.data.meta?.totalPages || response.data.totalPages || 1,
+        meta: response.data.meta,
+      };
+    }
+
+    // Fallback for direct data array
+    return {
+      payments: response.data || [],
+      total: response.data?.length || 0,
+      page: 1,
+      limit: filters?.limit || 10,
+      totalPages: 1,
+    };
   }
 
-  async getPaymentById(id: string) {
+  async getPaymentById(id: string): Promise<{ data: Payment }> {
     return apiService.get<Payment>(`/payment/${id}`);
   }
 
-  async createPayment(data: CreatePaymentData) {
-    return apiService.post<Payment>("/payment", data);
+  async createPayment(data: CreatePaymentData): Promise<{ data: Payment }> {
+    const payload = {
+      ...data,
+      currency: data.currency || "USD",
+      paymentDate: data.paymentDate || new Date().toISOString(),
+    };
+    return apiService.post<Payment>("/payment", payload);
   }
 
-  async updatePayment(id: string, data: UpdatePaymentData) {
+  async updatePayment(
+    id: string,
+    data: UpdatePaymentData
+  ): Promise<{ data: Payment }> {
     return apiService.patch<Payment>(`/payment/${id}`, data);
   }
 
-  async deletePayment(id: string) {
+  async deletePayment(id: string): Promise<{ message: string }> {
     return apiService.delete(`/payment/${id}`);
   }
 
-  async getPaymentsByInvoice(invoiceId: string) {
-    return this.getPayments({ invoiceId });
+  async getPaymentsByInvoice(invoiceId: string): Promise<PaymentsListResponse> {
+    return this.getPayments({ invoiceId, limit: 100 });
+  }
+
+  async getPaymentStats(): Promise<{ data: PaymentStats }> {
+    try {
+      // Try to get stats from dedicated endpoint
+      return apiService.get<PaymentStats>("/payment/stats");
+    } catch (error) {
+      // Fallback: calculate stats from payments list
+      const response = await this.getPayments({ limit: 1000 });
+      const payments = response.payments || [];
+
+      const stats: PaymentStats = {
+        totalRevenue: 0,
+        completed: { count: 0, amount: 0 },
+        pending: { count: 0, amount: 0 },
+        failed: { count: 0, amount: 0 },
+        refunded: { count: 0, amount: 0 },
+        byMethod: {},
+      };
+
+      payments.forEach((payment) => {
+        stats.totalRevenue += payment.amount;
+
+        // Status aggregation
+        if (payment.status === "completed") {
+          stats.completed.count += 1;
+          stats.completed.amount += payment.amount;
+        } else if (payment.status === "pending") {
+          stats.pending.count += 1;
+          stats.pending.amount += payment.amount;
+        } else if (payment.status === "failed") {
+          stats.failed.count += 1;
+          stats.failed.amount += payment.amount;
+        } else if (payment.status === "refunded") {
+          stats.refunded.count += 1;
+          stats.refunded.amount += payment.amount;
+        }
+
+        // Method aggregation
+        if (!stats.byMethod[payment.method]) {
+          stats.byMethod[payment.method] = { count: 0, amount: 0 };
+        }
+        stats.byMethod[payment.method].count += 1;
+        stats.byMethod[payment.method].amount += payment.amount;
+      });
+
+      return { data: stats };
+    }
   }
 }
 
 export const paymentService = new PaymentService();
-
-// ===================================
-// src/services/reminderService.ts
-// ===================================
-
-export type ReminderType = "before_due" | "overdue_3" | "overdue_7" | "manual";
-export type ReminderStatus = "scheduled" | "sent" | "failed";
-
-export interface Reminder {
-  _id: string;
-  userId: string;
-  invoiceId: string;
-  type: ReminderType;
-  status: ReminderStatus;
-  scheduledFor: string;
-  sentAt?: string;
-  error?: string;
-  createdAt: string;
-  updatedAt: string;
-  // Populated fields
-  invoice?: {
-    _id: string;
-    invoiceNumber: string;
-    dueDate: string;
-    total: number;
-  };
-}
-
-export interface ReminderHistory {
-  reminders: Reminder[];
-  total: number;
-}
-
-export interface ReminderStats {
-  totalSent: number;
-  totalScheduled: number;
-  totalFailed: number;
-  byType: {
-    before_due: number;
-    overdue_3: number;
-    overdue_7: number;
-    manual: number;
-  };
-}
-
-class ReminderService {
-  async getReminderHistory(invoiceId: string) {
-    return apiService.get<ReminderHistory>(`/reminder/invoice/${invoiceId}`);
-  }
-
-  async sendManualReminder(invoiceId: string) {
-    return apiService.post(`/reminder/send-now/${invoiceId}`);
-  }
-
-  async cancelReminders(invoiceId: string) {
-    return apiService.delete(`/reminder/cancel/${invoiceId}`);
-  }
-
-  async scheduleReminders(invoiceId: string) {
-    return apiService.post(`/reminder/schedule/${invoiceId}`);
-  }
-
-  async getReminderStats() {
-    return apiService.get<ReminderStats>("/reminder/stats");
-  }
-
-  async getUpcomingReminders() {
-    return apiService.get<{ reminders: Reminder[] }>("/reminder/upcoming");
-  }
-}
-
-export const reminderService = new ReminderService();

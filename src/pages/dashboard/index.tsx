@@ -6,12 +6,19 @@ import { useInvoicesQuery } from "@/hooks/queries/use-invoices-query";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useClientsQuery } from "@/hooks/queries/use-clients-query";
+import { usePaymentStatsQuery } from "@/hooks/queries/use-payments-query";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useDashboardStatsQuery();
   const { data: invoices = [], isLoading: invoicesLoading } =
     useInvoicesQuery();
+
+  const { data: clientsData } = useClientsQuery();
+  const { data: paymentStats } = usePaymentStatsQuery();
+
+  const clients = clientsData || [];
 
   if (statsLoading || invoicesLoading) {
     return (
@@ -26,11 +33,11 @@ const Dashboard = () => {
   const dashboardStats = stats
     ? {
         totalInvoiced:
-          stats.totalRevenue + stats.pendingAmount + stats.overdueAmount,
-        pendingAmount: stats.pendingAmount,
-        overdue: stats.overdueAmount,
-        paid: stats.paidAmount,
-        clientsCount: stats.totalClients,
+          stats.totalRevenue + stats.pendingAmount + stats.overdueInvoices || 0,
+        pendingAmount: stats.pendingAmount || 0,
+        overdue: stats.overdueInvoices || 0,
+        paid: stats.pendingAmount || 0,
+        clientsCount: stats.totalClients || 0,
         recentActivity: [], // TODO: Add activity feed
       }
     : {
@@ -54,7 +61,7 @@ const Dashboard = () => {
       <StatsCards stats={dashboardStats} />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <InvoiceStatusChart invoices={invoices} />
+        {/* <InvoiceStatusChart invoices={invoices} /> */}
         <RecentActivity activities={dashboardStats.recentActivity} />
       </div>
     </div>

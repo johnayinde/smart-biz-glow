@@ -111,7 +111,7 @@ class InvoiceService {
     if (filters?.sortOrder) params.append("sortOrder", filters.sortOrder);
 
     const queryString = params.toString();
-    const url = `/invoice${queryString ? `?${queryString}` : ""}`;
+    const url = `/invoices${queryString ? `?${queryString}` : ""}`;
 
     return apiService.get<InvoicesListResponse>(url);
   }

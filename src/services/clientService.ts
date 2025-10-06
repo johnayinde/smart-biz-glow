@@ -45,11 +45,14 @@ export interface UpdateClientData extends Partial<CreateClientData> {
 }
 
 export interface ClientsListResponse {
-  clients: Client[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  success: boolean;
+  data: Client[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface ClientFilters {
@@ -74,34 +77,36 @@ class ClientService {
     if (filters?.sortOrder) params.append("sortOrder", filters.sortOrder);
 
     const queryString = params.toString();
-    const url = `/client${queryString ? `?${queryString}` : ""}`;
+    const url = `/clients${queryString ? `?${queryString}` : ""}`;
 
-    return apiService.get<ClientsListResponse>(url);
+    const res = await apiService.get<ClientsListResponse>(url);
+    console.log(res);
+
+    return res;
   }
 
   async getClientById(id: string) {
-    return apiService.get<Client>(`/client/${id}`);
+    return apiService.get<Client>(`/clients/${id}`);
   }
 
   async createClient(data: CreateClientData) {
-    const res = await apiService.post<Client>("/client", data);
-    return res.data;
+    return await apiService.post<Client>("/clients", data);
   }
 
   async updateClient(id: string, data: UpdateClientData) {
-    return apiService.patch<Client>(`/client/${id}`, data);
+    return apiService.patch<Client>(`/clients/${id}`, data);
   }
 
   async deleteClient(id: string) {
-    return apiService.delete(`/client/${id}`);
+    return apiService.delete(`/clients/${id}`);
   }
 
   async archiveClient(id: string) {
-    return apiService.patch<Client>(`/client/${id}`, { isActive: false });
+    return apiService.patch<Client>(`/clients/${id}`, { isActive: false });
   }
 
   async restoreClient(id: string) {
-    return apiService.patch<Client>(`/client/${id}`, { isActive: true });
+    return apiService.patch<Client>(`/clients/${id}`, { isActive: true });
   }
 
   async searchClients(searchTerm: string) {

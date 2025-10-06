@@ -51,11 +51,12 @@ export interface RegisterResponse {
 class AuthService {
   async login(data: LoginData) {
     const result = await apiService.post<AuthResponse>("/auth/login", data);
+    console.log({ result });
 
-    if (result.data && result.data.accessToken) {
+    if (result && result.accessToken) {
       // Store both tokens
-      apiService.setToken(result.data.accessToken);
-      apiService.setRefreshToken(result.data.refreshToken);
+      apiService.setToken(result.accessToken);
+      apiService.setRefreshToken(result.refreshToken);
     }
 
     return result;

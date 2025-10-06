@@ -18,26 +18,18 @@ const SERVICE_URLS = {
 
 function getServiceUrl(path: string): string {
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
-  // Direct mode - route to specific service
-  // if (path.startsWith("/auth")) return SERVICE_URLS.auth;
-  // if (path.startsWith("/client")) return SERVICE_URLS.client;
-  // if (path.startsWith("/invoice")) return SERVICE_URLS.invoice;
-  // if (path.startsWith("/payment")) return SERVICE_URLS.payment;
-  // if (path.startsWith("/reminder")) return SERVICE_URLS.reminder;
-  // if (path.startsWith("/analytics")) return SERVICE_URLS.analytics;
 
   if (cleanPath.startsWith("auth")) return SERVICE_URLS.auth;
-  if (cleanPath.startsWith("client")) return SERVICE_URLS.client;
+  if (cleanPath.startsWith("client")) return SERVICE_URLS.client; // matches "client" and "clients"
   if (cleanPath.startsWith("invoice")) return SERVICE_URLS.invoice;
   if (cleanPath.startsWith("payment")) return SERVICE_URLS.payment;
   if (cleanPath.startsWith("reminder")) return SERVICE_URLS.reminder;
   if (cleanPath.startsWith("analytics")) return SERVICE_URLS.analytics;
 
-  return SERVICE_URLS.auth; // fallback
-
-  return SERVICE_URLS.auth; // fallback
+  return SERVICE_URLS.auth; // single fallback
 }
-// Backend response structure
+
+// Backend response envelope
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -45,7 +37,6 @@ interface ApiResponse<T> {
   statusCode?: number;
 }
 
-// Error response structure
 interface ApiErrorResponse {
   success: false;
   message: string;
@@ -60,227 +51,131 @@ class APIService {
   constructor() {
     this.token = localStorage.getItem("auth_token");
     this.client = axios.create({
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       timeout: 10000,
     });
 
-    // Load token from localStorage on initialization
-    if (this.token) {
-      this.setAuthHeader(this.token);
-    }
-
-    // this.setupInterceptors();
+    if (this.token) this.setAuthHeader(this.token);
 
     // Request interceptor
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        if (!this.token) {
-          this.token = localStorage.getItem("auth_token");
-        }
-
+        if (!this.token) this.token = localStorage.getItem("auth_token");
         if (this.token && !config.headers.Authorization) {
           config.headers.Authorization = `Bearer ${this.token}`;
         }
-
         const baseURL = getServiceUrl(config.url || "");
         config.baseURL = baseURL;
 
+        // Optional: remove in prod
         console.log(
           `🚀 ${config.method?.toUpperCase()} ${baseURL}${config.url}`
         );
         return config;
       },
-      (error) => {
-        console.error("❌ Request error:", error);
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error)
     );
 
     // Response interceptor
     this.client.interceptors.response.use(
-      (response) => {
-        console.log(`✅ Response:`, response.status);
-        return response;
-      },
+      (response) => response,
       async (error: AxiosError<ApiErrorResponse>) => {
-        console.error(
-          "❌ Response error:",
-          error.response?.data || error.message
-        );
-
-        // Handle 401 Unauthorized - token expired
+        // Handle 401 with refresh
         if (error.response?.status === 401) {
           const refreshToken = localStorage.getItem("refresh_token");
-
           if (refreshToken && !error.config?.url?.includes("/auth/refresh")) {
             try {
               const refreshUrl = getServiceUrl("/auth/refresh");
-              const response = await axios.post<ApiResponse>(
-                "/auth/refresh",
-                { refreshToken },
-                { baseURL: refreshUrl }
-              );
-              if (response.data.success && response.data.data.accessToken) {
-                const newToken = response.data.data.accessToken;
-                this.setToken(newToken);
+              const resp = await axios.post<
+                ApiResponse<{ accessToken: string }>
+              >("/auth/refresh", { refreshToken }, { baseURL: refreshUrl });
+              const newToken = resp.data.data.accessToken;
+              this.setToken(newToken);
 
-                // Retry the original request
-                if (error.config) {
-                  error.config.headers.Authorization = `Bearer ${newToken}`;
-                  const baseURL = getServiceUrl(error.config.url || "");
-                  error.config.baseURL = baseURL;
-                  return this.client(error.config);
-                }
+              if (error.config) {
+                // error.config.headers = error.config.headers || {};
+                error.config.headers.Authorization = `Bearer ${newToken}`;
+                error.config.baseURL = getServiceUrl(error.config.url || "");
+                return this.client(error.config);
               }
-            } catch (refreshError) {
-              // Refresh failed - logout user
+            } catch {
               this.clearAuth();
               window.location.href = "/login";
             }
           } else {
-            // No refresh token or refresh endpoint failed - logout
             this.clearAuth();
             window.location.href = "/login";
           }
         }
 
-        return Promise.reject(error);
+        // Normalize & throw so React Query can catch
+        const normalized = this.normalizeError(error);
+        return Promise.reject(normalized);
       }
     );
   }
 
+  // ---- auth helpers ----
   setAuthHeader(token: string) {
     this.client.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   }
-
   removeAuthHeader() {
     delete this.client.defaults.headers.common["Authorization"];
   }
-
   setToken(token: string) {
     this.token = token;
     localStorage.setItem("auth_token", token);
     this.setAuthHeader(token);
   }
-
   setRefreshToken(refreshToken: string) {
     localStorage.setItem("refresh_token", refreshToken);
   }
-
   clearAuth() {
     this.token = null;
     localStorage.removeItem("auth_token");
     localStorage.removeItem("refresh_token");
     this.removeAuthHeader();
   }
-
   getToken() {
-    // Always get fresh token from localStorage
     this.token = localStorage.getItem("auth_token");
     return this.token;
   }
 
-  // Generic request methods that handle the wrapped response
-  async get<T>(url: string, config = {}) {
-    try {
-      const response = await this.client.get<ApiResponse<T>>(url, config);
-      return {
-        data: response.data.data,
-        message: response.data.message,
-        error: null,
-      };
-    } catch (error) {
-      return this.handleError<T>(error);
+  // ---- normalized error ----
+  private normalizeError(err: unknown) {
+    if (axios.isAxiosError<ApiErrorResponse>(err)) {
+      const msg =
+        err.response?.data?.message || err.message || "An error occurred";
+      const detail = err.response?.data?.error || "Unknown error";
+      const status = err.response?.status;
+      const e = new Error(msg) as Error & { detail?: string; status?: number };
+      e.detail = detail;
+      e.status = status;
+      return e;
     }
+    return new Error(String(err));
   }
 
-  async post<T>(url: string, data?: any, config = {}) {
-    try {
-      const response = await this.client.post<ApiResponse<T>>(
-        url,
-        data,
-        config
-      );
-      return {
-        data: response.data.data,
-        message: response.data.message,
-        error: null,
-      };
-    } catch (error) {
-      return this.handleError<T>(error);
-    }
+  // ---- unified request helpers that return T directly ----
+  async get<T>(url: string, config = {}): Promise<T> {
+    const resp = await this.client.get<ApiResponse<T>>(url, config);
+    return resp.data.data; // ✅ return payload only
   }
-
-  async put<T>(url: string, data?: any, config = {}) {
-    try {
-      const response = await this.client.put<ApiResponse<T>>(url, data, config);
-      return {
-        data: response.data.data,
-        message: response.data.message,
-        error: null,
-      };
-    } catch (error) {
-      return this.handleError<T>(error);
-    }
+  async post<T>(url: string, data?: any, config = {}): Promise<T> {
+    const resp = await this.client.post<ApiResponse<T>>(url, data, config);
+    return resp.data.data;
   }
-
-  async patch<T>(url: string, data?: any, config = {}) {
-    try {
-      const response = await this.client.patch<ApiResponse<T>>(
-        url,
-        data,
-        config
-      );
-      return {
-        data: response.data.data,
-        message: response.data.message,
-        error: null,
-      };
-    } catch (error) {
-      return this.handleError<T>(error);
-    }
+  async put<T>(url: string, data?: any, config = {}): Promise<T> {
+    const resp = await this.client.put<ApiResponse<T>>(url, data, config);
+    return resp.data.data;
   }
-
-  async delete<T>(url: string, config = {}) {
-    try {
-      const response = await this.client.delete<ApiResponse<T>>(url, config);
-      return {
-        data: response.data.data,
-        message: response.data.message,
-        error: null,
-      };
-    } catch (error) {
-      return this.handleError<T>(error);
-    }
+  async patch<T>(url: string, data?: any, config = {}): Promise<T> {
+    const resp = await this.client.patch<ApiResponse<T>>(url, data, config);
+    return resp.data.data;
   }
-
-  private handleError<T>(error: unknown): {
-    data: null;
-    message: string;
-    error: string;
-  } {
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<ApiErrorResponse>;
-      const message =
-        axiosError.response?.data?.message ||
-        axiosError.message ||
-        "An error occurred";
-      const errorDetail = axiosError.response?.data?.error || "Unknown error";
-
-      return {
-        data: null,
-        message,
-        error: errorDetail,
-      };
-    }
-
-    return {
-      data: null,
-      message: "An unexpected error occurred",
-      error: String(error),
-    };
+  async delete<T>(url: string, config = {}): Promise<T> {
+    const resp = await this.client.delete<ApiResponse<T>>(url, config);
+    return resp.data.data;
   }
 }
 

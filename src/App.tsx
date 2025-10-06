@@ -36,6 +36,7 @@ import Notifications from "./pages/notifications";
 import InvoiceDetail from "./pages/invoice-detail";
 import Subscription from "./pages/subscription";
 import NotFound from "./pages/not-found";
+import CreateInvoice from "./pages/invoices/new";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -65,6 +66,7 @@ const App = () => (
                 <Route element={<MainLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/invoices" element={<Invoices />} />
+                  <Route path="/invoices/new" element={<CreateInvoice />} />
                   <Route path="/invoices/:id" element={<InvoiceDetail />} />
                   <Route
                     path="/invoice-templates"
@@ -72,12 +74,12 @@ const App = () => (
                   />
                   <Route path="/clients" element={<Clients />} />
                   <Route path="/clients/:id" element={<ClientDetail />} />
-                  <Route path="/payments" element={<Payments />} />
+                  {/* <Route path="/payments" element={<Payments />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/insights" element={<Insights />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/subscription" element={<Subscription />} />
+                  <Route path="/subscription" element={<Subscription />} /> */}
                 </Route>
               </Route>
 

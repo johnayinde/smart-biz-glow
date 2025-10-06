@@ -76,18 +76,18 @@ class AnalyticsService {
     return apiService.get<DashboardStats>(url);
   }
 
-  async getRevenueData(filters?: AnalyticsFilters) {
-    const params = new URLSearchParams();
+  // async getRevenueData(filters?: AnalyticsFilters) {
+  //   const params = new URLSearchParams();
 
-    if (filters?.startDate) params.append("startDate", filters.startDate);
-    if (filters?.endDate) params.append("endDate", filters.endDate);
-    if (filters?.period) params.append("period", filters.period);
+  //   if (filters?.startDate) params.append("startDate", filters.startDate);
+  //   if (filters?.endDate) params.append("endDate", filters.endDate);
+  //   if (filters?.period) params.append("period", filters.period);
 
-    const queryString = params.toString();
-    const url = `/analytics/revenue${queryString ? `?${queryString}` : ""}`;
+  //   const queryString = params.toString();
+  //   const url = `/analytics/revenue${queryString ? `?${queryString}` : ""}`;
 
-    return apiService.get<{ data: RevenueData[] }>(url);
-  }
+  //   return apiService.get<{ data: RevenueData[] }>(url);
+  // }
 
   async getClientInsights(filters?: AnalyticsFilters) {
     const params = new URLSearchParams();
@@ -102,20 +102,6 @@ class AnalyticsService {
     }`;
 
     return apiService.get<{ clients: ClientInsight[] }>(url);
-  }
-
-  async getReminderPerformance(filters?: AnalyticsFilters) {
-    const params = new URLSearchParams();
-
-    if (filters?.startDate) params.append("startDate", filters.startDate);
-    if (filters?.endDate) params.append("endDate", filters.endDate);
-
-    const queryString = params.toString();
-    const url = `/analytics/reminder-performance${
-      queryString ? `?${queryString}` : ""
-    }`;
-
-    return apiService.get<ReminderPerformance>(url);
   }
 
   async getPaymentTrends(filters?: AnalyticsFilters) {
@@ -145,6 +131,27 @@ class AnalyticsService {
     }`;
 
     return apiService.get<{ breakdown: InvoiceStatusBreakdown[] }>(url);
+  }
+
+  async getReminderPerformance(filters?: AnalyticsFilters) {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+
+    const queryString = params.toString();
+    const url = `/analytics/reminders${queryString ? `?${queryString}` : ""}`;
+
+    return apiService.get<ReminderPerformance>(url);
+  }
+
+  async getRevenueData(filters?: AnalyticsFilters) {
+    const params = new URLSearchParams();
+    if (filters?.period) params.append("period", filters.period);
+
+    const queryString = params.toString();
+    const url = `/analytics/revenue${queryString ? `?${queryString}` : ""}`;
+
+    return apiService.get<{ data: RevenueData[] }>(url);
   }
 
   async exportData(
