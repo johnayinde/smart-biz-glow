@@ -26,14 +26,14 @@ import PasswordReset from "./pages/auth/PasswordReset";
 import Dashboard from "./pages/dashboard";
 import Invoices from "./pages/invoices";
 import InvoiceTemplates from "./pages/invoice-templates";
-import Clients from "./pages/clients";
-import ClientDetail from "./pages/client-detail";
+import Clients from "./pages/clients/index";
+import ClientDetail from "./pages/clients/client-detail";
 import Payments from "./pages/payments";
 import Analytics from "./pages/analytics";
 import Insights from "./pages/insights";
 import Settings from "./pages/settings";
 import Notifications from "./pages/notifications";
-import InvoiceDetail from "./pages/invoice-detail";
+import InvoiceDetail from "./pages/invoices/invoice-detail";
 import Subscription from "./pages/subscription";
 import NotFound from "./pages/not-found";
 import CreateInvoice from "./pages/invoices/new";
@@ -65,6 +65,8 @@ const App = () => (
               <Route element={<ProtectedRoute />}>
                 <Route element={<MainLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/clients" element={<Clients />} />
+                  <Route path="/clients/:id" element={<ClientDetail />} />
                   <Route path="/invoices" element={<Invoices />} />
                   <Route path="/invoices/new" element={<CreateInvoice />} />
                   <Route path="/invoices/:id" element={<InvoiceDetail />} />
@@ -72,8 +74,6 @@ const App = () => (
                     path="/invoice-templates"
                     element={<InvoiceTemplates />}
                   />
-                  <Route path="/clients" element={<Clients />} />
-                  <Route path="/clients/:id" element={<ClientDetail />} />
                   {/* <Route path="/payments" element={<Payments />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/insights" element={<Insights />} />

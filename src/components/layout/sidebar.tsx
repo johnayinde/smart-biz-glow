@@ -1,49 +1,51 @@
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { 
-  BarChart3, 
-  ExternalLink, 
-  FileText, 
-  Home, 
-  Layers, 
-  Users, 
+import {
+  BarChart3,
+  FileText,
+  Home,
+  Layers,
+  Users,
   Wallet,
   Settings,
   BrainCircuit,
   Bell,
   ChevronLeft,
-  Menu
+  Menu,
+  X,
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className }: SidebarProps) {
-  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-  
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 1024;
+      const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (mobile) {
-        setCollapsed(true);
+      if (!mobile) {
+        setMobileOpen(false);
       }
     };
-    
-    window.addEventListener('resize', handleResize);
+
     handleResize();
-    
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
+
   const toggleSidebar = () => {
-    setCollapsed(!collapsed);
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setCollapsed(!collapsed);
+    }
   };
-  
+
   const navItems = [
     { name: "Dashboard", icon: Home, path: "/dashboard" },
     { name: "Invoices", icon: FileText, path: "/invoices" },
@@ -54,126 +56,157 @@ export function Sidebar({ className }: SidebarProps) {
     { name: "Insights", icon: BrainCircuit, path: "/insights" },
   ];
 
-  return (
-    <>
-      {isMobile && collapsed && (
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="fixed left-4 top-4 z-50 lg:hidden" 
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-sidebar border-r">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <div
+          className={cn(
+            "flex items-center gap-2",
+            collapsed && !isMobile && "hidden"
+          )}
+        >
+          <Layers className="h-6 w-6 text-primary" />
+          <h2 className="text-lg font-semibold">SmartInvoice</h2>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
           onClick={toggleSidebar}
         >
-          <Menu className="h-4 w-4" />
+          {isMobile ? (
+            <X className="h-4 w-4" />
+          ) : (
+            <ChevronLeft
+              className={cn(
+                "h-4 w-4 transition-transform",
+                collapsed && "rotate-180"
+              )}
+            />
+          )}
         </Button>
-      )}
-      
-      <div 
-        className={cn(
-          "transition-all duration-300 ease-in-out h-full flex flex-col bg-sidebar border-r",
-          className,
-          collapsed ? "w-0 -translate-x-full lg:w-16 lg:translate-x-0" : "w-64",
-          isMobile && !collapsed ? "fixed z-40 h-full left-0 top-0 w-64" : ""
-        )}
-      >
-        <div className="space-y-4 py-4 flex flex-col h-full">
-          <div className="px-3 py-2 flex items-center justify-between">
-            <div className={cn("flex items-center gap-2 px-2", collapsed && "lg:hidden")}>
-              <Layers className="h-5 w-5 text-sidebar-primary" />
-              <h2 className={cn("text-base font-semibold tracking-tight", collapsed && "lg:hidden")}>
-                SmartInvoice
-              </h2>
-            </div>
-            {!isMobile && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="ml-auto h-8 w-8" 
-                onClick={toggleSidebar}
-              >
-                <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
-              </Button>
-            )}
-          </div>
-          
-          <div className="px-2">
-            <div className="space-y-1">
-              {navItems.map((item) => (
-                <NavLink key={item.path} to={item.path} onClick={() => isMobile && setCollapsed(true)}>
-                  {({ isActive }) => (
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      size="sm"
-                      className={cn(
-                        "w-full justify-start",
-                        isActive && "bg-accent font-medium",
-                        collapsed && "lg:justify-center lg:px-2"
-                      )}
-                    >
-                      <item.icon className={cn("h-4 w-4", !collapsed ? "mr-2" : "")} />
-                      {!collapsed && <span>{item.name}</span>}
-                    </Button>
-                  )}
-                </NavLink>
-              ))}
-            </div>
-          </div>
-          
-          <div className="mt-auto px-2 py-2">
-            <div className="space-y-1">
-              <NavLink to="/notifications">
-                {({ isActive }) => (
-                  <Button 
-                    variant={isActive ? "secondary" : "ghost"} 
-                    size="sm" 
-                    className={cn(
-                      "w-full justify-start",
-                      isActive && "bg-accent font-medium",
-                      collapsed && "lg:justify-center lg:px-2"
-                    )}
-                  >
-                    <Bell className={cn("h-4 w-4", !collapsed ? "mr-2" : "")} />
-                    {!collapsed && <span>Notifications</span>}
-                  </Button>
-                )}
-              </NavLink>
-              <NavLink to="/settings">
-                {({ isActive }) => (
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    size="sm"
-                    className={cn(
-                      "w-full justify-start",
-                      isActive && "bg-accent font-medium",
-                      collapsed && "lg:justify-center lg:px-2"
-                    )}
-                  >
-                    <Settings className={cn("h-4 w-4", !collapsed ? "mr-2" : "")} />
-                    {!collapsed && <span>Settings</span>}
-                  </Button>
-                )}
-              </NavLink>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={cn(
-                  "w-full justify-start text-muted-foreground",
-                  collapsed && "lg:justify-center lg:px-2"
-                )}
-              >
-                <ExternalLink className={cn("h-4 w-4", !collapsed ? "mr-2" : "")} />
-                {!collapsed && <span>Documentation</span>}
-              </Button>
-            </div>
-          </div>
-        </div>
       </div>
-      
-      {isMobile && !collapsed && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30"
-          onClick={() => setCollapsed(true)}
-        />
+
+      {/* Navigation Items */}
+      <div className="flex-1 overflow-y-auto p-3">
+        <nav className="space-y-2">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={() => isMobile && setMobileOpen(false)}
+            >
+              {({ isActive }) => (
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start h-16 text-base",
+                    isActive && "bg-accent font-medium",
+                    collapsed && !isMobile && "justify-center px-2"
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-5 w-5",
+                      !collapsed || isMobile ? "mr-3" : ""
+                    )}
+                  />
+                  {(!collapsed || isMobile) && <span>{item.name}</span>}
+                </Button>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+
+      {/* Footer Actions */}
+      <div className="p-3 border-t space-y-2">
+        <NavLink to="/notifications">
+          {({ isActive }) => (
+            <Button
+              variant={isActive ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-start h-11 text-base",
+                isActive && "bg-accent font-medium",
+                collapsed && !isMobile && "justify-center px-2"
+              )}
+              onClick={() => isMobile && setMobileOpen(false)}
+            >
+              <Bell
+                className={cn("h-5 w-5", !collapsed || isMobile ? "mr-3" : "")}
+              />
+              {(!collapsed || isMobile) && <span>Notifications</span>}
+            </Button>
+          )}
+        </NavLink>
+        <NavLink to="/settings">
+          {({ isActive }) => (
+            <Button
+              variant={isActive ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-start h-11 text-base",
+                isActive && "bg-accent font-medium",
+                collapsed && !isMobile && "justify-center px-2"
+              )}
+              onClick={() => isMobile && setMobileOpen(false)}
+            >
+              <Settings
+                className={cn("h-5 w-5", !collapsed || isMobile ? "mr-3" : "")}
+              />
+              {(!collapsed || isMobile) && <span>Settings</span>}
+            </Button>
+          )}
+        </NavLink>
+      </div>
+    </div>
+  );
+
+  // Mobile: Show menu button + overlay sidebar
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile Menu Button */}
+        {!mobileOpen && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="fixed left-4 top-4 z-50 md:hidden"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Mobile Sidebar Overlay */}
+        {mobileOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setMobileOpen(false)}
+            />
+
+            {/* Sidebar */}
+            <div className="fixed left-0 top-0 bottom-0 w-64 z-50">
+              {sidebarContent}
+            </div>
+          </>
+        )}
+      </>
+    );
+  }
+
+  // Desktop: Normal sidebar
+  return (
+    <div
+      className={cn(
+        "transition-all duration-300 ease-in-out h-screen",
+        collapsed ? "w-16" : "w-64",
+        className
       )}
-    </>
+    >
+      {sidebarContent}
+    </div>
   );
 }
