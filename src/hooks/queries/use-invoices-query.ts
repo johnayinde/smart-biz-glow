@@ -8,6 +8,7 @@ import {
   InvoiceFilters,
 } from "@/services/invoiceService";
 import { useToast } from "@/hooks/use-toast";
+import { string } from "zod";
 
 // Get all invoices
 export const useInvoicesQuery = (filters?: InvoiceFilters) => {
@@ -27,12 +28,12 @@ export const useInvoiceQuery = (id: string) => {
 };
 
 // Get invoice stats
-export const useInvoiceStatsQuery = () => {
-  return useQuery({
-    queryKey: ["invoiceStats"],
-    queryFn: () => invoiceService.getInvoiceStats(),
-  });
-};
+// export const useInvoiceStatsQuery = () => {
+//   return useQuery({
+//     queryKey: ["invoiceStats"],
+//     queryFn: () => invoiceService.getInvoiceStats(),
+//   });
+// };
 
 // Create invoice
 export const useCreateInvoice = () => {
@@ -145,8 +146,7 @@ export const useSendInvoice = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      invoiceService.updateInvoice(id, { status: "sent" as any }),
+    mutationFn: (id: string) => invoiceService.sendInvoice(id),
     onSuccess: (response, id) => {
       queryClient.invalidateQueries({ queryKey: ["invoice", id] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });

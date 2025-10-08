@@ -1,6 +1,6 @@
 // src/pages/invoices/new/index.tsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -38,6 +38,8 @@ import { format, addDays } from "date-fns";
 import { CalendarIcon, Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import { clientService } from "@/services/clientService";
 import { useCreateInvoice } from "@/hooks/queries/use-invoices-query";
+import { toast } from "@/hooks/use-toast";
+import { invoiceService } from "@/services/invoiceService";
 
 const lineItemSchema = z.object({
   description: z.string().min(1, "Description is required"),
@@ -65,22 +67,69 @@ const invoiceSchema = z.object({
 type InvoiceFormData = z.infer<typeof invoiceSchema>;
 
 export default function CreateInvoice() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const clientIdFromUrl = searchParams.get("clientId");
+  const isEditMode = !!id;
+
   const createInvoiceMutation = useCreateInvoice();
+
+  // Fetch existing invoice if editing
+  const { data: existingInvoice } = useQuery({
+    queryKey: ["invoice", id],
+    queryFn: () => invoiceService.getInvoiceById(id!),
+    enabled: isEditMode,
+  });
+
+  // const form = useForm<InvoiceFormData>({
+  //   resolver: zodResolver(invoiceSchema),
+  //   defaultValues: {
+  //     clientId: clientIdFromUrl || "",
+  //     issueDate: new Date(),
+  //     dueDate: addDays(new Date(), 30),
+  //     items: [{ description: "", quantity: 1, unitPrice: 0, total: 0 }],
+  //     tax: 0,
+  //     discount: 0,
+  //     notes: "",
+  //     terms: "Payment is due within 30 days",
+  //     reminderEnabled: true,
+  //   },
+  // });
+  console.log("🚀 existingInvoice:", existingInvoice);
 
   const form = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceSchema),
-    defaultValues: {
-      clientId: "",
-      issueDate: new Date(),
-      dueDate: addDays(new Date(), 30),
-      items: [{ description: "", quantity: 1, unitPrice: 0, total: 0 }],
-      tax: 0,
-      discount: 0,
-      notes: "",
-      terms: "Payment is due within 30 days",
-      reminderEnabled: true,
-    },
+    defaultValues:
+      isEditMode && existingInvoice?.data
+        ? {
+            clientId: existingInvoice.data.clientId,
+            issueDate: new Date(existingInvoice.data.issueDate),
+            dueDate: new Date(existingInvoice.data.dueDate),
+            items: existingInvoice.data.items.map((item) => ({
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.rate, // Backend uses 'rate'
+              total: item.amount,
+            })),
+            tax: existingInvoice.data.tax || 0,
+            discount: existingInvoice.data.discount || 0,
+            notes: existingInvoice.data.notes || "",
+            terms: existingInvoice.data.terms || "",
+            reminderEnabled:
+              existingInvoice.data.reminderConfig?.enabled ?? true,
+          }
+        : {
+            clientId: clientIdFromUrl || "",
+            issueDate: new Date(),
+            dueDate: addDays(new Date(), 30),
+            items: [{ description: "", quantity: 1, unitPrice: 0, total: 0 }],
+            tax: 0,
+            discount: 0,
+            notes: "",
+            terms: "Payment is due within 30 days",
+            reminderEnabled: true,
+          },
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -93,9 +142,10 @@ export default function CreateInvoice() {
     queryKey: ["clients", "active"],
     queryFn: () =>
       clientService.getClients({
-        isActive: true,
+        status: "active",
         limit: 100,
       }),
+    // staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const clients = clientsData?.data || [];
@@ -135,35 +185,70 @@ export default function CreateInvoice() {
   const subtotal = calculateSubtotal();
   const total = calculateTotal();
 
-  const handleSubmit = (data: InvoiceFormData) => {
+  const handleSubmit = async (data: InvoiceFormData) => {
+    console.log("🚀 Form submitted with data:", data);
+
+    // Validate at least one item
+    if (!data.items || data.items.length === 0) {
+      console.error("❌ No items in form");
+      return;
+    }
+
+    const hasInvalidItems = data.items.some(
+      (item) => !item.description || item.quantity < 1 || item.unitPrice <= 0
+    );
+
+    if (hasInvalidItems) {
+      toast({
+        title: "Validation Error",
+        description:
+          "Please ensure all items have a description, quantity (minimum 1), and price greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const subtotal = calculateSubtotal();
+    const total = calculateTotal();
+
+    console.log("💰 Calculated totals:", { subtotal, total });
+
     const payload = {
       clientId: data.clientId,
       issueDate: data.issueDate.toISOString(),
       dueDate: data.dueDate.toISOString(),
       items: data.items.map((item) => ({
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        total: item.total,
+        description: item.description.trim(),
+        quantity: Number(item.quantity),
+        rate: Number(item.unitPrice),
+        amount: Number(item.total),
       })),
-      subtotal,
-      tax: data.tax || 0,
-      discount: data.discount || 0,
-      total,
+      subtotal: Number(subtotal.toFixed(2)),
+      taxRate: 0,
+      taxAmount: Number((data.tax || 0).toFixed(2)),
+      discount: Number((data.discount || 0).toFixed(2)),
+      total: Number(total.toFixed(2)),
       currency: "USD",
-      notes: data.notes || undefined,
-      terms: data.terms || undefined,
+      notes: data.notes?.trim() || undefined,
+      terms: data.terms?.trim() || undefined,
       reminderConfig: {
         enabled: data.reminderEnabled,
         sequenceType: "default" as const,
       },
     };
 
-    createInvoiceMutation.mutate(payload as any, {
-      onSuccess: (response) => {
-        navigate(`/invoices/${response.data._id}`);
-      },
-    });
+    console.log("Sending payload:", payload);
+
+    try {
+      const response = await createInvoiceMutation.mutateAsync(payload as any);
+      console.log("Invoice created successfully:", response);
+
+      if (response?.data?.id) {
+        navigate(`/invoices/${response.data.id}`);
+      }
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+    }
   };
 
   const formatter = new Intl.NumberFormat("en-US", {
@@ -172,19 +257,23 @@ export default function CreateInvoice() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col items-start gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate("/invoices")}
           >
             <ArrowLeft className="h-4 w-4" />
+            Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Create Invoice</h1>
+            <h1 className="text-3xl font-bold">
+              {" "}
+              {isEditMode ? "Edit Invoice" : "Create Invoice"}
+            </h1>
             <p className="text-muted-foreground">
               Fill in the details to create a new invoice
             </p>
@@ -232,7 +321,7 @@ export default function CreateInvoice() {
                             </div>
                           ) : (
                             clients.map((client) => (
-                              <SelectItem key={client._id} value={client._id}>
+                              <SelectItem key={client?.id} value={client?.id}>
                                 {client.name}
                                 {client.company && ` - ${client.company}`}
                               </SelectItem>
@@ -385,7 +474,7 @@ export default function CreateInvoice() {
                 {fields.map((field, index) => (
                   <div
                     key={field.id}
-                    className="grid grid-cols-12 gap-4 items-end"
+                    className="grid grid-cols-12 gap-4 items-start"
                   >
                     {/* Description */}
                     <div className="col-span-5">
@@ -407,7 +496,7 @@ export default function CreateInvoice() {
                       />
                     </div>
 
-                    {/* Quantity */}
+                    {/* Quantity - TEXT INPUT */}
                     <div className="col-span-2">
                       <FormField
                         control={form.control}
@@ -417,23 +506,56 @@ export default function CreateInvoice() {
                             {index === 0 && <FormLabel>Qty</FormLabel>}
                             <FormControl>
                               <Input
-                                type="number"
-                                min="1"
-                                {...field}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    parseFloat(e.target.value) || 1
-                                  )
-                                }
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="1"
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  // Allow empty or only digits
+                                  if (value === "" || /^\d+$/.test(value)) {
+                                    const numValue =
+                                      value === "" ? 0 : parseInt(value);
+                                    field.onChange(numValue);
+
+                                    // Immediately recalculate total
+                                    const unitPrice =
+                                      form.getValues(
+                                        `items.${index}.unitPrice`
+                                      ) || 0;
+                                    const newTotal = numValue * unitPrice;
+                                    form.setValue(
+                                      `items.${index}.total`,
+                                      newTotal
+                                    );
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  const value = e.target.value;
+                                  const numValue = parseInt(value);
+                                  if (!value || numValue < 1) {
+                                    field.onChange(1); // Default to 1, not 0
+                                    const unitPrice =
+                                      form.getValues(
+                                        `items.${index}.unitPrice`
+                                      ) || 0;
+                                    form.setValue(
+                                      `items.${index}.total`,
+                                      1 * unitPrice
+                                    );
+                                  }
+                                }}
                               />
                             </FormControl>
-                            <FormMessage />
+                            <div className="h-5">
+                              <FormMessage />
+                            </div>
                           </FormItem>
                         )}
                       />
                     </div>
 
-                    {/* Unit Price */}
+                    {/* Unit Price - TEXT INPUT */}
                     <div className="col-span-2">
                       <FormField
                         control={form.control}
@@ -443,18 +565,64 @@ export default function CreateInvoice() {
                             {index === 0 && <FormLabel>Price</FormLabel>}
                             <FormControl>
                               <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                {...field}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="0.00"
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  // Allow empty, digits, and one decimal point with up to 2 decimals
+                                  if (
+                                    value === "" ||
+                                    /^\d*\.?\d{0,2}$/.test(value)
+                                  ) {
+                                    const numValue =
+                                      value === "" ? 0 : parseFloat(value) || 0;
+                                    field.onChange(numValue);
+
+                                    // Immediately recalculate total
+                                    const quantity =
+                                      form.getValues(
+                                        `items.${index}.quantity`
+                                      ) || 0;
+                                    const newTotal = quantity * numValue;
+                                    form.setValue(
+                                      `items.${index}.total`,
+                                      newTotal
+                                    );
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  // Format to 2 decimals on blur
+                                  const value = e.target.value;
+                                  if (
+                                    value === "" ||
+                                    isNaN(parseFloat(value))
+                                  ) {
+                                    field.onChange(0);
+                                    form.setValue(`items.${index}.total`, 0);
+                                  } else {
+                                    const formatted = parseFloat(
+                                      parseFloat(value).toFixed(2)
+                                    );
+                                    field.onChange(formatted);
+
+                                    // Recalculate total with formatted price
+                                    const quantity =
+                                      form.getValues(
+                                        `items.${index}.quantity`
+                                      ) || 0;
+                                    form.setValue(
+                                      `items.${index}.total`,
+                                      quantity * formatted
+                                    );
+                                  }
+                                }}
                               />
                             </FormControl>
-                            <FormMessage />
+                            <div className="h-5">
+                              <FormMessage />
+                            </div>
                           </FormItem>
                         )}
                       />
@@ -470,6 +638,7 @@ export default function CreateInvoice() {
                           form.watch(`items.${index}.total`) || 0
                         )}
                       </div>
+                      <div className="h-5"></div>
                     </div>
 
                     {/* Delete Button */}
@@ -480,6 +649,7 @@ export default function CreateInvoice() {
                         size="icon"
                         onClick={() => remove(index)}
                         disabled={fields.length === 1}
+                        className={index === 0 ? "mt-8" : ""}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -501,7 +671,7 @@ export default function CreateInvoice() {
                       </span>
                     </div>
 
-                    {/* Tax */}
+                    {/* Tax - TEXT INPUT */}
                     <div className="flex justify-between items-center gap-4">
                       <span className="text-sm text-muted-foreground">
                         Tax:
@@ -513,16 +683,34 @@ export default function CreateInvoice() {
                           <FormItem className="flex-1 max-w-[200px]">
                             <FormControl>
                               <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                                type="text"
+                                inputMode="decimal"
                                 placeholder="0.00"
-                                {...field}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (
+                                    value === "" ||
+                                    /^\d*\.?\d{0,2}$/.test(value)
+                                  ) {
+                                    field.onChange(
+                                      value === "" ? "" : parseFloat(value) || 0
+                                    );
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  const value = e.target.value;
+                                  if (
+                                    value === "" ||
+                                    isNaN(parseFloat(value))
+                                  ) {
+                                    field.onChange(0);
+                                  } else {
+                                    field.onChange(
+                                      parseFloat(parseFloat(value).toFixed(2))
+                                    );
+                                  }
+                                }}
                               />
                             </FormControl>
                           </FormItem>
@@ -530,7 +718,7 @@ export default function CreateInvoice() {
                       />
                     </div>
 
-                    {/* Discount */}
+                    {/* Discount - TEXT INPUT */}
                     <div className="flex justify-between items-center gap-4">
                       <span className="text-sm text-muted-foreground">
                         Discount:
@@ -542,16 +730,34 @@ export default function CreateInvoice() {
                           <FormItem className="flex-1 max-w-[200px]">
                             <FormControl>
                               <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                                type="text"
+                                inputMode="decimal"
                                 placeholder="0.00"
-                                {...field}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (
+                                    value === "" ||
+                                    /^\d*\.?\d{0,2}$/.test(value)
+                                  ) {
+                                    field.onChange(
+                                      value === "" ? "" : parseFloat(value) || 0
+                                    );
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  const value = e.target.value;
+                                  if (
+                                    value === "" ||
+                                    isNaN(parseFloat(value))
+                                  ) {
+                                    field.onChange(0);
+                                  } else {
+                                    field.onChange(
+                                      parseFloat(parseFloat(value).toFixed(2))
+                                    );
+                                  }
+                                }}
                               />
                             </FormControl>
                           </FormItem>
@@ -570,7 +776,6 @@ export default function CreateInvoice() {
               </div>
             </CardContent>
           </Card>
-
           {/* Additional Details */}
           <Card>
             <CardHeader>
@@ -622,7 +827,6 @@ export default function CreateInvoice() {
               />
             </CardContent>
           </Card>
-
           {/* Form Actions */}
           <div className="flex justify-end gap-4">
             <Button
@@ -630,14 +834,17 @@ export default function CreateInvoice() {
               variant="outline"
               onClick={() => navigate("/invoices")}
               disabled={createInvoiceMutation.isPending}
+              //disabled={false}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={createInvoiceMutation.isPending}>
               <Save className="mr-2 h-4 w-4" />
               {createInvoiceMutation.isPending
-                ? "Creating..."
-                : "Create Invoice"}
+                ? "Processing..."
+                : isEditMode
+                ? "Save"
+                : "Create"}
             </Button>
           </div>
         </form>

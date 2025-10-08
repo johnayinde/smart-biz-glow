@@ -48,6 +48,16 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { invoiceService, InvoiceStatus } from "@/services/invoiceService";
@@ -57,6 +67,9 @@ import {
 } from "@/hooks/queries/use-invoices-query";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { clientService } from "@/services/clientService";
+import { useInvoicesWithClients } from "@/hooks/useInvoicesWithClients";
+import { useSendInvoice } from "@/hooks/queries/use-invoices-query";
 
 const statusColors = {
   draft: "secondary",
@@ -78,36 +91,40 @@ export default function Invoices() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">(
-    "all"
-  );
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">();
   const [page, setPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
+  const sendInvoiceMutation = useSendInvoice();
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [invoiceToSend, setInvoiceToSend] = useState<string | null>(null);
+
+  const { invoices, isLoading, error, meta, refetch } = useInvoicesWithClients({
+    page: 1,
+    limit: 10,
+    search: searchTerm || undefined,
+    status: statusFilter !== "all" ? statusFilter : undefined,
+  });
 
   const deleteMutation = useDeleteInvoice();
   const markAsPaidMutation = useMarkInvoiceAsPaid();
 
-  // Fetch invoices
-  const {
-    data: invoicesData,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["invoices", page, searchTerm, statusFilter],
-    queryFn: () =>
-      invoiceService.getInvoices({
-        page,
-        limit: 10,
-        search: searchTerm || undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-      }),
-    placeholderData: keepPreviousData,
+  const totalPages = meta?.totalPages || 1;
+
+  // Fetch all clients (cache this globally)
+  const { data: clientsResponse, isLoading: clientsLoading } = useQuery({
+    queryKey: ["clients", "all"],
+    queryFn: () => clientService.getClients({ limit: 100 }),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  const invoices = invoicesData?.data.invoices || [];
-  const totalPages = invoicesData?.data?.totalPages || 1;
-
   // Handlers
+
+  const confirmDelete = () => {
+    if (invoiceToDelete) {
+      deleteMutation.mutate(invoiceToDelete);
+    }
+  };
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setPage(1);
@@ -127,9 +144,8 @@ export default function Invoices() {
   };
 
   const handleDeleteInvoice = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this invoice?")) {
-      deleteMutation.mutate(id);
-    }
+    setInvoiceToDelete(id);
+    setDeleteDialogOpen(true);
   };
 
   const handleMarkAsPaid = (id: string) => {
@@ -138,18 +154,37 @@ export default function Invoices() {
     }
   };
 
-  const handleDownloadPDF = (id: string) => {
-    toast({
-      title: "Coming soon",
-      description: "PDF download will be available soon.",
-    });
+  const handleDownloadPDF = async (id: string) => {
+    try {
+      await invoiceService.downloadInvoice(id);
+      toast({
+        title: "Success",
+        description: "Invoice downloaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to download invoice",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendInvoice = (id: string) => {
-    toast({
-      title: "Coming soon",
-      description: "Email sending will be available soon.",
-    });
+    setInvoiceToSend(id);
+    setSendDialogOpen(true);
+  };
+
+  const confirmSend = async () => {
+    if (!invoiceToSend) return;
+
+    try {
+      await sendInvoiceMutation.mutateAsync(invoiceToSend);
+      setSendDialogOpen(false);
+      setInvoiceToSend(null);
+    } catch (error) {
+      // Error handled by mutation
+    }
   };
 
   const formatter = new Intl.NumberFormat("en-US", {
@@ -214,7 +249,6 @@ export default function Invoices() {
           Create Invoice
         </Button>
       </div>
-
       {/* Filters and Search */}
       <Card>
         <CardHeader>
@@ -279,26 +313,26 @@ export default function Invoices() {
                   </TableHeader>
                   <TableBody>
                     {invoices.map((invoice) => (
-                      <TableRow key={invoice._id}>
+                      <TableRow key={invoice.id}>
                         <TableCell className="font-medium">
                           <button
-                            onClick={() => handleViewInvoice(invoice._id)}
+                            onClick={() => handleViewInvoice(invoice.id)}
                             className="hover:underline text-left"
                           >
                             {invoice.invoiceNumber}
                           </button>
                         </TableCell>
+                        <TableCell>{invoice.client?.name || "N/A"}</TableCell>
                         <TableCell>
-                          {invoice.client?.name || invoice.clientId}
+                          {format(new Date(invoice.issueDate), "MMM d, yyyy") ||
+                            "N/A"}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(invoice.issueDate), "MMM d, yyyy")}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(invoice.dueDate), "MMM d, yyyy")}
+                          {format(new Date(invoice.dueDate), "MMM d, yyyy") ||
+                            "N/A"}
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatter.format(invoice.total)}
+                          {formatter.format(invoice.total) || "N/A"}
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusColors[invoice.status]}>
@@ -317,19 +351,19 @@ export default function Invoices() {
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={() => handleViewInvoice(invoice._id)}
+                                onClick={() => handleViewInvoice(invoice.id)}
                               >
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleEditInvoice(invoice._id)}
+                                onClick={() => handleEditInvoice(invoice.id)}
                               >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Invoice
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleDownloadPDF(invoice._id)}
+                                onClick={() => handleDownloadPDF(invoice.id)}
                               >
                                 <Download className="mr-2 h-4 w-4" />
                                 Download PDF
@@ -337,7 +371,7 @@ export default function Invoices() {
                               <DropdownMenuSeparator />
                               {invoice.status === "draft" && (
                                 <DropdownMenuItem
-                                  onClick={() => handleSendInvoice(invoice._id)}
+                                  onClick={() => handleSendInvoice(invoice.id)}
                                 >
                                   <Send className="mr-2 h-4 w-4" />
                                   Send Invoice
@@ -346,7 +380,7 @@ export default function Invoices() {
                               {(invoice.status === "sent" ||
                                 invoice.status === "overdue") && (
                                 <DropdownMenuItem
-                                  onClick={() => handleMarkAsPaid(invoice._id)}
+                                  onClick={() => handleMarkAsPaid(invoice.id)}
                                 >
                                   <DollarSign className="mr-2 h-4 w-4" />
                                   Mark as Paid
@@ -354,7 +388,7 @@ export default function Invoices() {
                               )}
                               <DropdownMenuItem
                                 className="text-destructive"
-                                onClick={() => handleDeleteInvoice(invoice._id)}
+                                onClick={() => handleDeleteInvoice(invoice.id)}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Invoice
@@ -398,6 +432,49 @@ export default function Invoices() {
           )}
         </CardContent>
       </Card>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              invoice and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Invoice</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the invoice as sent and schedule automatic payment
+              reminders. The client will receive reminder emails based on your
+              configured schedule.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmSend}
+              disabled={sendInvoiceMutation.isPending}
+            >
+              {sendInvoiceMutation.isPending ? "Sending..." : "Send Invoice"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

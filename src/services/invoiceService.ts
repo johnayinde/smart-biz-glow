@@ -7,8 +7,8 @@ export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
 export interface InvoiceItem {
   description: string;
   quantity: number;
-  unitPrice: number;
-  total: number;
+  rate: number;
+  amount: number;
 }
 
 export type InvoiceSortBy =
@@ -118,13 +118,13 @@ class InvoiceService {
     if (filters?.sortBy) params.append("sortBy", filters.sortBy);
     if (filters?.sortOrder) params.append("sortOrder", filters.sortOrder);
 
-    if (filters?.sortBy) {
-      params.append("sortBy", filters.sortBy);
-    }
+    // if (filters?.sortBy) {
+    //   params.append("sortBy", filters.sortBy);
+    // }
 
-    if (filters?.sortOrder && filters?.sortBy) {
-      params.append("sortOrder", filters.sortOrder);
-    }
+    // if (filters?.sortOrder && filters?.sortBy) {
+    //   params.append("sortOrder", filters.sortOrder);
+    // }
     const queryString = params.toString();
     const url = `/invoices${queryString ? `?${queryString}` : ""}`;
 
@@ -154,6 +154,23 @@ class InvoiceService {
 
   async sendInvoice(id: string) {
     return apiService.post<Invoice>(`/invoices/${id}/send`, {});
+  }
+
+  async downloadInvoice(id: string): Promise<void> {
+    const response = await apiService.get<any>(`/invoices/${id}/download`, {
+      responseType: "blob",
+    });
+
+    // Create download link
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `invoice-${id}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 }
 
