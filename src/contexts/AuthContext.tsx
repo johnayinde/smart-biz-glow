@@ -58,8 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const me = await authService.getCurrentUser(); // throws on error
-      if (mounted) setUser(me);
+      const response = await authService.getCurrentUser(); // throws on error
+      if (mounted) setUser(response.data); // Assuming `data` contains the `User` object
     } catch (e) {
       const err = e as NormalizedError;
       if (err.status === 401) {
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "Please check your email to verify your account.",
         });
 
-        return res; // { userId }
+        return res.data; // { userId }
       } catch (err: any) {
         toast({
           title: "Registration Failed",
@@ -166,7 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ---- refreshUser ----
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
-      const me = await authService.getCurrentUser();
+      const response = await authService.getCurrentUser();
+      const me = response.data; // Extract the User object from ApiResponse
       setUser(me);
       return me;
     } catch (err) {

@@ -56,30 +56,42 @@ class APIService {
   private token: string | null = null;
 
   constructor() {
-    this.token = localStorage.getItem("auth_token");
+    // this.token = localStorage.getItem("auth_token");
     this.client = axios.create({
       headers: { "Content-Type": "application/json" },
       timeout: 10000,
     });
+    this.initializeToken();
+    this.setupInterceptors();
 
-    if (this.token) this.setAuthHeader(this.token);
+    // if (this.token) this.setAuthHeader(this.token);
+  }
 
+  private setupInterceptors() {
     // Request interceptor
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        if (!this.token) this.token = localStorage.getItem("auth_token");
+        // ✅ Always get fresh token from instance variable (not localStorage)
         if (this.token && !config.headers.Authorization) {
           config.headers.Authorization = `Bearer ${this.token}`;
+          console.log("🔐 Added Authorization header to request");
+        } else if (!this.token) {
+          console.log("⚠️ No token available for request");
         }
+
         const baseURL = getServiceUrl(config.url || "");
         config.baseURL = baseURL;
 
         console.log(
-          `🚀 ${config.method?.toUpperCase()} ${baseURL}${config.url}`
+          `🚀 ${config.method?.toUpperCase()} ${baseURL}${config.url}`,
+          config.headers.Authorization ? "WITH TOKEN" : "NO TOKEN"
         );
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => {
+        console.error("❌ Request error:", error);
+        return Promise.reject(error);
+      }
     );
 
     // Response interceptor
@@ -117,6 +129,13 @@ class APIService {
         return Promise.reject(normalized);
       }
     );
+  }
+  private initializeToken() {
+    const storedToken = localStorage.getItem("auth_token");
+    if (storedToken) {
+      console.log("🔑 Initializing token from localStorage");
+      this.setToken(storedToken);
+    }
   }
 
   // Auth helpers

@@ -10,9 +10,12 @@ export const useClientsQuery = () => {
   return useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
-      const { data, error } = await clientService.getClients();
-      if (error) throw new Error(error);
-      return data || [];
+      try {
+        const { data } = await clientService.getClients();
+        return data || [];
+      } catch (error: any) {
+        throw new Error(error.message || "Failed to fetch clients");
+      }
     },
   });
 };

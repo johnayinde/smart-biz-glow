@@ -71,6 +71,11 @@ const App = () => (
                   <Route path="/invoices/new" element={<CreateInvoice />} />
                   <Route path="/invoices/:id" element={<InvoiceDetail />} />
                   <Route
+                    path="/invoices/edit/:id"
+                    element={<CreateInvoice />}
+                  />{" "}
+                  {/* Add this */}
+                  <Route
                     path="/invoice-templates"
                     element={<InvoiceTemplates />}
                   />

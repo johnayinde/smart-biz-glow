@@ -51,7 +51,6 @@ export interface RegisterResponse {
 class AuthService {
   async login(data: LoginData) {
     const result = await apiService.post<AuthResponse>("/auth/login", data);
-    console.log({ result });
 
     if (result && result.data.accessToken) {
       // Store both tokens

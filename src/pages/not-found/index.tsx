@@ -18,11 +18,12 @@ const NotFound = () => {
         <h1 className="text-7xl font-bold text-primary">404</h1>
         <h2 className="text-3xl font-semibold">Page Not Found</h2>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Sorry, we couldn't find the page you're looking for. It might have been moved or doesn't exist.
+          Sorry, we couldn't find the page you're looking for. It might have
+          been moved or doesn't exist.
         </p>
         <div className="pt-6">
           <Button asChild>
-            <Link to="/">Return to Dashboard</Link>
+            <Link to="/login">Return to Dashboard</Link>
           </Button>
         </div>
       </div>
