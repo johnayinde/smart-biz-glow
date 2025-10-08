@@ -104,8 +104,11 @@ export function EditClientDialog({
 
   const handleSubmit = (data: ClientFormData) => {
     // Clean up empty optional fields
+    console.log({ client });
+
     const cleanedData = {
       ...data,
+      // id: client.id || undefined,
       phone: data.phone || undefined,
       company: data.company || undefined,
       website: data.website || undefined,
@@ -129,7 +132,7 @@ export function EditClientDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Client</DialogTitle>
           <DialogDescription>
@@ -150,7 +153,7 @@ export function EditClientDialog({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name *</FormLabel>
+                      <FormLabel required>Name</FormLabel>
                       <FormControl>
                         <Input placeholder="John Doe" {...field} />
                       </FormControl>
@@ -163,7 +166,7 @@ export function EditClientDialog({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email *</FormLabel>
+                      <FormLabel required>Email </FormLabel>
                       <FormControl>
                         <Input
                           type="email"
@@ -180,9 +183,9 @@ export function EditClientDialog({
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel required>Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="+1 (555) 000-0000" {...field} />
+                        <Input placeholder="+234123456" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -315,28 +318,9 @@ export function EditClientDialog({
               </div>
             </div>
 
-            <Separator />
+            {/* <Separator /> */}
 
             {/* Notes */}
-            <div>
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Additional notes about this client..."
-                        rows={4}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
 
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-4">

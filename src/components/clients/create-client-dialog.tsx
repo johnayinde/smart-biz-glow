@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreateClientData } from "@/services/clientService";
 
 const clientSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -53,7 +54,7 @@ type ClientFormData = z.infer<typeof clientSchema>;
 interface CreateClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: ClientFormData) => void;
+  onSubmit: (data: CreateClientData) => void;
   isSubmitting?: boolean;
 }
 
@@ -85,8 +86,10 @@ export function CreateClientDialog({
 
   const handleSubmit = (data: ClientFormData) => {
     // Clean up empty optional fields
-    const cleanedData = {
+    const cleanedData: CreateClientData = {
       ...data,
+      name: data.name, // Ensure name is always included
+      email: data.email, // Ensure email is always included
       phone: data.phone || undefined,
       company: data.company || undefined,
       website: data.website || undefined,
@@ -111,7 +114,7 @@ export function CreateClientDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Client</DialogTitle>
           <DialogDescription>
@@ -133,7 +136,7 @@ export function CreateClientDialog({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name *</FormLabel>
+                      <FormLabel required>Name</FormLabel>
                       <FormControl>
                         <Input placeholder="John Doe" {...field} />
                       </FormControl>
@@ -146,7 +149,7 @@ export function CreateClientDialog({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email *</FormLabel>
+                      <FormLabel required>Email</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
@@ -163,9 +166,9 @@ export function CreateClientDialog({
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel required>Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="+1 (555) 000-0000" {...field} />
+                        <Input placeholder="+234123456" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -176,9 +179,9 @@ export function CreateClientDialog({
                   name="company"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Company</FormLabel>
+                      <FormLabel required>Company</FormLabel>
                       <FormControl>
-                        <Input placeholder="Acme Corp" {...field} />
+                        <Input placeholder="xyc Inc." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -298,28 +301,7 @@ export function CreateClientDialog({
               </div>
             </div>
 
-            <Separator />
-
-            {/* Notes */}
-            <div>
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Additional notes about this client..."
-                        rows={4}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* <Separator /> */}
 
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-4">

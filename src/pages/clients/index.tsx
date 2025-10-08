@@ -79,20 +79,18 @@ export default function Clients() {
   const navigate = useNavigate();
 
   // Fetch clients with search and pagination
-  const { data, isLoading, isFetching, error, refetch } =
-    useQuery<ClientsListResponse>({
-      queryKey: ["clients", { page, search: searchTerm }],
-      queryFn: async () => {
-        const res = await clientService.getClients({
-          page,
-          limit: 10,
-          search: searchTerm || undefined,
-        });
-      },
-      placeholderData: keepPreviousData,
-      staleTime: 30_000,
-    });
-  console.log({ data });
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ["clients", { page, search: searchTerm }],
+    queryFn: () =>
+      clientService.getClients({
+        page,
+        limit: 10,
+        search: searchTerm || undefined,
+      }),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+
   const clients: Client[] = data?.data ?? [];
   const totalPages = data?.meta.totalPages ?? 1;
   const currentPage = data?.meta.page ?? 1;
@@ -351,10 +349,10 @@ export default function Clients() {
                   </TableHeader>
                   <TableBody>
                     {clients.map((client: Client) => (
-                      <TableRow key={client._id}>
+                      <TableRow key={client?.id}>
                         <TableCell className="font-medium">
                           <button
-                            onClick={() => handleViewDetails(client._id)}
+                            onClick={() => handleViewDetails(client?.id)}
                             className="hover:underline text-left"
                           >
                             {client.name}
@@ -377,9 +375,13 @@ export default function Clients() {
                         <TableCell>{client.company || "-"}</TableCell>
                         <TableCell>
                           <Badge
-                            variant={client.isActive ? "default" : "secondary"}
+                            variant={
+                              client.status === "active"
+                                ? "default"
+                                : "destructive"
+                            }
                           >
-                            {client.isActive ? "Active" : "Archived"}
+                            {client.status === "active" ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -394,7 +396,7 @@ export default function Clients() {
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={() => handleViewDetails(client._id)}
+                                onClick={() => handleViewDetails(client?.id)}
                               >
                                 View Details
                               </DropdownMenuItem>
@@ -405,28 +407,28 @@ export default function Clients() {
                                 Edit Client
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleCreateInvoice(client._id)}
+                                onClick={() => handleCreateInvoice(client?.id)}
                               >
                                 <FileText className="mr-2 h-4 w-4" />
                                 Create Invoice
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              {client.isActive ? (
+                              {client.status === "active" ? (
                                 <DropdownMenuItem
-                                  onClick={() => handleArchive(client._id)}
+                                  onClick={() => handleArchive(client?.id)}
                                 >
-                                  Archive Client
+                                  Disable Client
                                 </DropdownMenuItem>
                               ) : (
                                 <DropdownMenuItem
-                                  onClick={() => handleRestore(client._id)}
+                                  onClick={() => handleRestore(client?.id)}
                                 >
                                   Restore Client
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem
                                 className="text-destructive"
-                                onClick={() => handleDeleteClient(client._id)}
+                                onClick={() => handleDeleteClient(client?.id)}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Client
@@ -486,10 +488,10 @@ export default function Clients() {
           onOpenChange={setEditDialogOpen}
           client={selectedClient}
           // onSubmit={(data) =>
-          //   updateMutation.mutate({ id: selectedClient._id, data })
+          //   updateMutation.mutate({ id: selectedClient?.id, data })
           // }
           onSubmit={(data) =>
-            updateMutation.mutate({ id: selectedClient._id, data })
+            updateMutation.mutate({ id: selectedClient?.id, data })
           }
           isSubmitting={updateMutation.isPending}
         />
