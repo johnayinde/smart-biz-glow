@@ -37,9 +37,13 @@ import { cn } from "@/lib/utils";
 import { format, addDays } from "date-fns";
 import { CalendarIcon, Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import { clientService } from "@/services/clientService";
-import { useCreateInvoice } from "@/hooks/queries/use-invoices-query";
+import {
+  useCreateInvoice,
+  useUpdateInvoice,
+} from "@/hooks/queries/use-invoices-query";
 import { toast } from "@/hooks/use-toast";
 import { invoiceService } from "@/services/invoiceService";
+import { ReminderConfigSection } from "@/components/invoices/InvoiceForm";
 
 const lineItemSchema = z.object({
   description: z.string().min(1, "Description is required"),
@@ -61,7 +65,13 @@ const invoiceSchema = z.object({
   discount: z.number().min(0).optional(),
   notes: z.string().optional(),
   terms: z.string().optional(),
-  reminderEnabled: z.boolean().default(true),
+  // reminderEnabled: z.boolean().default(true),
+  reminderConfig: z.object({
+    enabled: z.boolean().default(true),
+    sequenceType: z
+      .enum(["default", "aggressive", "gentle"])
+      .default("default"),
+  }),
 });
 
 type InvoiceFormData = z.infer<typeof invoiceSchema>;
@@ -74,7 +84,7 @@ export default function CreateInvoice() {
   const isEditMode = !!id;
 
   const createInvoiceMutation = useCreateInvoice();
-
+  const updateInvoiceMutation = useUpdateInvoice(); // ADD THIS LINE
   // Fetch existing invoice if editing
   const { data: existingInvoice } = useQuery({
     queryKey: ["invoice", id],
@@ -82,20 +92,6 @@ export default function CreateInvoice() {
     enabled: isEditMode,
   });
 
-  // const form = useForm<InvoiceFormData>({
-  //   resolver: zodResolver(invoiceSchema),
-  //   defaultValues: {
-  //     clientId: clientIdFromUrl || "",
-  //     issueDate: new Date(),
-  //     dueDate: addDays(new Date(), 30),
-  //     items: [{ description: "", quantity: 1, unitPrice: 0, total: 0 }],
-  //     tax: 0,
-  //     discount: 0,
-  //     notes: "",
-  //     terms: "Payment is due within 30 days",
-  //     reminderEnabled: true,
-  //   },
-  // });
   console.log("🚀 existingInvoice:", existingInvoice);
 
   const form = useForm<InvoiceFormData>({
@@ -116,8 +112,8 @@ export default function CreateInvoice() {
             discount: existingInvoice.data.discount || 0,
             notes: existingInvoice.data.notes || "",
             terms: existingInvoice.data.terms || "",
-            reminderEnabled:
-              existingInvoice.data.reminderConfig?.enabled ?? true,
+            // reminderEnabled: existingInvoice.data.reminderConfig?.enabled,
+            reminderConfig: existingInvoice.data.reminderConfig,
           }
         : {
             clientId: clientIdFromUrl || "",
@@ -128,7 +124,11 @@ export default function CreateInvoice() {
             discount: 0,
             notes: "",
             terms: "Payment is due within 30 days",
-            reminderEnabled: true,
+            // reminderEnabled: true,
+            reminderConfig: {
+              enabled: true,
+              sequenceType: "default",
+            },
           },
   });
 
@@ -232,22 +232,55 @@ export default function CreateInvoice() {
       notes: data.notes?.trim() || undefined,
       terms: data.terms?.trim() || undefined,
       reminderConfig: {
-        enabled: data.reminderEnabled,
-        sequenceType: "default" as const,
+        enabled: data.reminderConfig.enabled,
+        sequenceType: data.reminderConfig.sequenceType,
       },
     };
 
     console.log("Sending payload:", payload);
-
+    // return;
     try {
-      const response = await createInvoiceMutation.mutateAsync(payload as any);
-      console.log("Invoice created successfully:", response);
+      // CHANGE THIS SECTION:
+      if (isEditMode && id) {
+        // UPDATE existing invoice
+        const response = await updateInvoiceMutation.mutateAsync({
+          id,
+          data: payload as any,
+        });
 
-      if (response?.data?.id) {
-        navigate(`/invoices/${response.data.id}`);
+        toast({
+          title: "Success",
+          description: "Invoice updated successfully",
+        });
+
+        if (response?.data?.id) {
+          navigate(`/invoices/${response.data.id}`);
+        }
+      } else {
+        // CREATE new invoice
+        const response = await createInvoiceMutation.mutateAsync(
+          payload as any
+        );
+        console.log("Invoice created successfully:", response);
+
+        toast({
+          title: "Success",
+          description: "Invoice created successfully",
+        });
+
+        if (response?.data?.id) {
+          navigate(`/invoices/${response.data.id}`);
+        }
       }
     } catch (error) {
-      console.error("Error creating invoice:", error);
+      console.error("Error saving invoice:", error);
+      toast({
+        title: "Error",
+        description: isEditMode
+          ? "Failed to update invoice"
+          : "Failed to create invoice",
+        variant: "destructive",
+      });
     }
   };
 
@@ -335,7 +368,7 @@ export default function CreateInvoice() {
                 />
 
                 {/* Reminder Toggle */}
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="reminderEnabled"
                   render={({ field }) => (
@@ -356,7 +389,7 @@ export default function CreateInvoice() {
                       </FormControl>
                     </FormItem>
                   )}
-                />
+                /> */}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -443,6 +476,8 @@ export default function CreateInvoice() {
                   )}
                 />
               </div>
+              {/* Reminder Configuration Section */}
+              <ReminderConfigSection form={form} />
             </CardContent>
           </Card>
 
@@ -833,18 +868,27 @@ export default function CreateInvoice() {
               type="button"
               variant="outline"
               onClick={() => navigate("/invoices")}
-              disabled={createInvoiceMutation.isPending}
-              //disabled={false}
+              disabled={
+                createInvoiceMutation.isPending ||
+                updateInvoiceMutation.isPending
+              } // CHANGE THIS
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createInvoiceMutation.isPending}>
+            <Button
+              type="submit"
+              disabled={
+                createInvoiceMutation.isPending ||
+                updateInvoiceMutation.isPending
+              } // CHANGE THIS
+            >
               <Save className="mr-2 h-4 w-4" />
-              {createInvoiceMutation.isPending
+              {createInvoiceMutation.isPending ||
+              updateInvoiceMutation.isPending
                 ? "Processing..."
                 : isEditMode
-                ? "Save"
-                : "Create"}
+                ? "Update Invoice"
+                : "Create Invoice"}
             </Button>
           </div>
         </form>

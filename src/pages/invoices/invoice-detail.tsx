@@ -26,13 +26,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { invoiceService } from "@/services/invoiceService";
-import { reminderService } from "@/services/reminderService";
 import { clientService } from "@/services/clientService";
 import { ReminderTimeline } from "@/components/reminders/reminder-timeline";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useState } from "react";
 import { RecordPaymentDialog } from "@/components/payments/record-payment-dialog";
+import reminderService from "@/services/reminderService";
 
 const statusColors = {
   draft: "secondary",
@@ -59,7 +59,7 @@ export default function InvoiceDetail() {
     queryFn: () => invoiceService.getInvoiceById(id!),
     enabled: !!id,
   });
-  console.log(invoiceData);
+  // console.log(invoiceData);
 
   const invoice = invoiceData?.data;
 
@@ -70,7 +70,7 @@ export default function InvoiceDetail() {
     enabled: !!id && invoice?.status !== "draft",
   });
 
-  const reminders = remindersData?.data || [];
+  const reminders = remindersData || [];
 
   // Fetch client details
   const { data: clientData } = useQuery({
@@ -179,6 +179,7 @@ export default function InvoiceDetail() {
       description: "Email sending will be available soon.",
     });
   };
+  console.log({ invoice });
 
   // Loading state
   if (invoiceLoading) {
@@ -428,11 +429,32 @@ export default function InvoiceDetail() {
         <div className="space-y-6">
           {/* Reminder Timeline */}
           {invoice.status !== "draft" && (
+            // <ReminderTimeline
+            //   reminders={reminders}
+            //   invoiceStatus={invoice.status}
+            //   onSendManual={handleSendReminder}
+            //   onCancelReminders={handleCancelReminders}
+            //   isSending={sendReminderMutation.isPending}
+            //   isLoading={remindersLoading}
+            // />
             <ReminderTimeline
               reminders={reminders}
               invoiceStatus={invoice.status}
+              dueDate={invoice.dueDate} // NEW: Add this
+              reminderConfig={{
+                // NEW: Add this
+                enabled: invoice.reminderConfig?.enabled ?? true,
+                sequenceType: invoice.reminderConfig?.sequenceType,
+                remindersSent: invoice.reminderConfig?.remindersSent,
+                nextReminderDate: invoice.reminderConfig?.nextReminderDate
+                  ? new Date(
+                      invoice.reminderConfig.nextReminderDate
+                    ).toISOString()
+                  : undefined,
+              }}
               onSendManual={handleSendReminder}
               onCancelReminders={handleCancelReminders}
+              // onRetryReminder={handleRetryReminder} // NEW: Add this function
               isSending={sendReminderMutation.isPending}
               isLoading={remindersLoading}
             />
