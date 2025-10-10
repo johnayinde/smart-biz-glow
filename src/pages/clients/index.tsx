@@ -231,7 +231,7 @@ export default function Clients() {
   };
 
   const handleCreateInvoice = (clientId: string) => {
-    navigate(`/invoices/create?clientId=${clientId}`);
+    navigate(`/invoices/new?clientId=${clientId}`);
   };
 
   const handleArchive = (clientId: string) => {
