@@ -179,6 +179,47 @@ class ReminderService {
     };
     return variants[status] || "outline";
   }
+
+  /**
+   * Retry a failed reminder
+   */
+  async retryReminder(reminderId: string): Promise<Reminder> {
+    try {
+      const response = await apiService.post<Reminder>(
+        `/reminders/retry/${reminderId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error retrying reminder:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get retry count for a reminder
+   */
+  getRetryCount(reminder: Reminder): number {
+    return reminder.retryCount || 0;
+  }
+
+  /**
+   * Check if reminder can be retried
+   */
+  canRetry(reminder: Reminder): boolean {
+    const maxRetries = 3;
+    return (
+      reminder.status === "failed" && (reminder.retryCount || 0) < maxRetries
+    );
+  }
+
+  /**
+   * Get remaining retry attempts
+   */
+  getRemainingRetries(reminder: Reminder): number {
+    const maxRetries = 3;
+    const currentRetries = reminder.retryCount || 0;
+    return Math.max(0, maxRetries - currentRetries);
+  }
 }
 
 export default new ReminderService();

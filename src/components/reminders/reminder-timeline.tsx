@@ -21,16 +21,12 @@ import reminderService from "@/services/reminderService";
 type ReminderType = "before_due" | "overdue_3" | "overdue_7" | "manual";
 type ReminderStatus = "scheduled" | "sent" | "failed" | "cancelled";
 
-interface Reminder {
-  _id: string;
-  id: string;
-  type: ReminderType;
-  status: ReminderStatus;
-  scheduledFor: string;
-  sentAt?: string;
-  failureReason?: string;
-  cancelledAt?: string;
-  retryCount?: number; // NEW: Show how many times retry was attempted
+import type { Reminder as ServiceReminder } from "@/services/reminderService";
+import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "../ui/alert";
+
+interface Reminder extends ServiceReminder {
+  // Extend the Reminder type from reminderService
 }
 
 interface ReminderTimelineProps {
@@ -46,7 +42,7 @@ interface ReminderTimelineProps {
   };
   onSendManual: () => void;
   onCancelReminders: () => void;
-  // onRetryReminder?: (reminderId: string) => void; // NEW: Retry individual reminder
+  onRetryReminder?: (reminderId: string) => void; // ← Make sure this is included
   isSending: boolean;
   isLoading?: boolean;
 }
@@ -128,7 +124,7 @@ export function ReminderTimeline({
   reminderConfig: config,
   onSendManual,
   onCancelReminders,
-  // onRetryReminder,
+  onRetryReminder,
   isSending,
   isLoading = false,
 }: ReminderTimelineProps) {
@@ -151,6 +147,15 @@ export function ReminderTimeline({
           config?.sequenceType || "default"
         )
       : [];
+
+  // Helper function to check if retry is available
+  const canRetryReminder = (reminder: Reminder) => {
+    return reminderService.canRetry(reminder);
+  };
+
+  const getRemainingRetries = (reminder: Reminder) => {
+    return reminderService.getRemainingRetries(reminder);
+  };
 
   if (isLoading) {
     return (
@@ -279,107 +284,97 @@ export function ReminderTimeline({
               const statusInfo = statusConfig[reminder.status];
               const StatusIcon = statusInfo.icon;
 
+              const reminderInfo = reminderConfig[reminder.type];
+              const ReminderIcon = reminderInfo.icon;
+
               return (
                 <div key={reminder.id} className="relative flex gap-4">
                   {/* Status Icon */}
                   <div
-                    className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 ${statusInfo.borderColor} ${statusInfo.bgColor}`}
+                    className={cn(
+                      "relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2",
+                      statusInfo.bgColor,
+                      statusInfo.borderColor
+                    )}
                   >
-                    <StatusIcon className={`h-4 w-4 ${statusInfo.color}`} />
+                    <StatusIcon className={cn("h-5 w-5", statusInfo.color)} />
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 pb-4">
+                  <div className="flex-1 space-y-2 pb-8">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 flex-1">
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">
-                            {typeConfig.title}
+                            {reminderInfo.title}
                           </p>
-                          <Badge variant={statusInfo.badge} className="text-xs">
+                          <Badge variant={statusInfo.badge}>
                             {statusInfo.label}
                           </Badge>
-                          {/* NEW: Show retry count if failed and retried */}
-                          {reminder.retryCount && reminder.retryCount > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              Retry {reminder.retryCount}
-                            </Badge>
-                          )}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {typeConfig.description}
+                          {reminderInfo.description}
                         </p>
-                      </div>
-                    </div>
-
-                    {/* Date/Time Info */}
-                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                      {reminder.status === "sent" && reminder.sentAt ? (
-                        <>
-                          <div className="flex items-center gap-1">
-                            <Check className="h-3 w-3" />
-                            <span>
-                              Sent{" "}
-                              {format(
+                        <p className="text-xs text-muted-foreground">
+                          {reminder.sentAt
+                            ? `Sent ${format(
                                 new Date(reminder.sentAt),
-                                "MMM d, h:mm a"
-                              )}
-                            </span>
-                          </div>
-                        </>
-                      ) : reminder.status === "scheduled" ? (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            Scheduled for{" "}
-                            {format(
-                              new Date(reminder.scheduledFor),
-                              "MMM d, h:mm a"
-                            )}
-                          </span>
-                        </div>
-                      ) : reminder.status === "failed" ? (
-                        <div className="flex items-center gap-1 text-destructive">
-                          <AlertCircle className="h-3 w-3" />
-                          <span>Failed to send</span>
-                        </div>
-                      ) : reminder.status === "cancelled" &&
-                        reminder.cancelledAt ? (
-                        <div className="flex items-center gap-1">
-                          <X className="h-3 w-3" />
-                          <span>
-                            Cancelled{" "}
-                            {format(new Date(reminder.cancelledAt), "MMM d")}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <X className="h-3 w-3" />
-                          <span>Cancelled</span>
-                        </div>
-                      )}
+                                "MMM d 'at' h:mm a"
+                              )}`
+                            : `Scheduled for ${format(
+                                new Date(reminder.scheduledFor),
+                                "MMM d 'at' h:mm a"
+                              )}`}
+                        </p>
+
+                        {/* Show retry count if failed */}
+                        {reminder.status === "failed" &&
+                          reminder.retryCount > 0 && (
+                            <p className="text-xs text-orange-600">
+                              Retry attempt {reminder.retryCount}/3
+                            </p>
+                          )}
+
+                        {/* Failure reason */}
+                        {/* {reminder.status === "failed" &&
+                          reminder.failureReason && (
+                            <Alert variant="destructive" className="mt-2">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription className="text-xs">
+                                {reminder.failureReason}
+                              </AlertDescription>
+                            </Alert>
+                          )} */}
+                      </div>
                     </div>
 
-                    {/* Error message with retry button */}
-                    {reminder.status === "failed" && reminder.failureReason && (
-                      <div className="mt-2 p-2 rounded-md bg-destructive/10 border border-destructive/20">
-                        <p className="text-xs text-destructive font-medium mb-2">
-                          Error: {reminder.failureReason}
-                        </p>
-                        {/* NEW: Retry individual reminder */}
-                        {/* {onRetryReminder && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 text-xs"
-                            onClick={() => onRetryReminder(reminder._id)}
-                          >
-                            <RotateCcw className="h-3 w-3 mr-1" />
-                            Retry This Reminder
-                          </Button>
-                        )} */}
-                      </div>
-                    )}
+                    {/* Retry Button for Failed Reminders */}
+                    {reminder.status === "failed" &&
+                      onRetryReminder &&
+                      canRetryReminder(reminder) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onRetryReminder(reminder.id)}
+                          disabled={isSending}
+                          className="mt-2"
+                        >
+                          <RotateCcw className="mr-2 h-3 w-3" />
+                          Retry ({getRemainingRetries(reminder)} attempts left)
+                        </Button>
+                      )}
+
+                    {/* Max retries reached message */}
+                    {reminder.status === "failed" &&
+                      !canRetryReminder(reminder) && (
+                        <Alert variant="destructive" className="mt-2">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            Maximum retry attempts reached. Please contact
+                            support or try manual reminder.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                   </div>
                 </div>
               );
