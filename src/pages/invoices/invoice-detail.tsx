@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Download,
   Send,
@@ -24,6 +24,9 @@ import {
   Phone,
   Building,
   AlertCircle,
+  CheckCircle2,
+  CreditCard,
+  ExternalLink,
 } from "lucide-react";
 import { invoiceService } from "@/services/invoiceService";
 import { clientService } from "@/services/clientService";
@@ -33,6 +36,7 @@ import { format } from "date-fns";
 import { useState } from "react";
 import { RecordPaymentDialog } from "@/components/payments/record-payment-dialog";
 import reminderService from "@/services/reminderService";
+import { Input } from "@/components/ui/input";
 
 const statusColors = {
   draft: "secondary",
@@ -139,6 +143,34 @@ export default function InvoiceDetail() {
       });
     },
   });
+
+  const retryReminderMutation = useMutation({
+    mutationFn: (reminderId: string) =>
+      reminderService.retryReminder(reminderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminders", id] });
+      toast({
+        title: "Reminder Retry Scheduled",
+        description: "The reminder will be sent again shortly.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Retry Failed",
+        description:
+          error?.response?.data?.message ||
+          "Failed to retry reminder. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add retry handler
+  const handleRetryReminder = async (reminderId: string) => {
+    if (window.confirm("Retry sending this reminder?")) {
+      retryReminderMutation.mutate(reminderId);
+    }
+  };
 
   // Handlers
   const handleMarkAsPaid = () => {
@@ -423,6 +455,84 @@ export default function InvoiceDetail() {
               )}
             </CardContent>
           </Card>
+
+          {invoice.status !== "paid" && invoice.paymentLink && (
+            <Card className="border-2 border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Online Payment
+                </CardTitle>
+                <CardDescription>
+                  Secure payment powered by Stripe
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">
+                    Pay online securely with credit or debit card
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>Instant payment confirmation</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>Secure encryption (SSL/TLS)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>PCI DSS compliant</span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => window.open(invoice.paymentLink, "_blank")}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Pay ${invoice.total.toFixed(2)} {invoice.currency} Now
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    You'll be redirected to Stripe's secure checkout page
+                  </p>
+                </div>
+
+                {/* Payment Link for copying */}
+                <div className="pt-2">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Or copy payment link:
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={invoice.paymentLink}
+                      readOnly
+                      className="text-xs"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(invoice.paymentLink!);
+                        toast({
+                          title: "Link Copied",
+                          description: "Payment link copied to clipboard",
+                        });
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -454,7 +564,7 @@ export default function InvoiceDetail() {
               }}
               onSendManual={handleSendReminder}
               onCancelReminders={handleCancelReminders}
-              // onRetryReminder={handleRetryReminder} // NEW: Add this function
+              onRetryReminder={handleRetryReminder} // NEW: Add this function
               isSending={sendReminderMutation.isPending}
               isLoading={remindersLoading}
             />
@@ -560,7 +670,7 @@ export default function InvoiceDetail() {
           </Card>
 
           {/* Payment Status Card */}
-          {invoice.status === "paid" && invoice.paidAt && (
+          {/* {invoice.status === "paid" && invoice.paidAt && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-green-600">
@@ -586,6 +696,22 @@ export default function InvoiceDetail() {
                 </div>
               </CardContent>
             </Card>
+          )} */}
+
+          {invoice.status === "paid" && (
+            <Alert className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800 dark:text-green-400">
+                Payment Received
+              </AlertTitle>
+              <AlertDescription className="text-green-700 dark:text-green-300">
+                This invoice has been paid
+                {invoice.paidAt && (
+                  <> on {format(new Date(invoice.paidAt), "MMM d, yyyy")}</>
+                )}
+                {invoice.paymentMethod && <> via {invoice.paymentMethod}</>}
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </div>

@@ -37,6 +37,8 @@ import InvoiceDetail from "./pages/invoices/invoice-detail";
 import Subscription from "./pages/subscription";
 import NotFound from "./pages/not-found";
 import CreateInvoice from "./pages/invoices/new";
+import PaymentCancel from "./pages/payments/cancel";
+import PaymentSuccess from "./pages/payments/success";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -79,7 +81,13 @@ const App = () => (
                     path="/invoice-templates"
                     element={<InvoiceTemplates />}
                   />
-                  {/* <Route path="/payments" element={<Payments />} />
+                  <Route path="/payments" element={<Payments />} />
+                  <Route
+                    path="/payments/success"
+                    element={<PaymentSuccess />}
+                  />
+                  <Route path="/payments/cancel" element={<PaymentCancel />} />
+                  {/*
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/insights" element={<Insights />} />
                   <Route path="/settings" element={<Settings />} />
