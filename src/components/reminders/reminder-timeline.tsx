@@ -1,28 +1,52 @@
 // src/components/reminders/reminder-timeline.tsx
+// Enhanced version - combines your existing code with additional features
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, Check, X, AlertCircle, Send, Mail } from "lucide-react";
+import {
+  Clock,
+  Check,
+  X,
+  AlertCircle,
+  Send,
+  Mail,
+  Info,
+  RotateCcw,
+} from "lucide-react";
 import { format } from "date-fns";
+import reminderService from "@/services/reminderService";
 
 type ReminderType = "before_due" | "overdue_3" | "overdue_7" | "manual";
 type ReminderStatus = "scheduled" | "sent" | "failed" | "cancelled";
 
 interface Reminder {
   _id: string;
+  id: string;
   type: ReminderType;
   status: ReminderStatus;
   scheduledFor: string;
   sentAt?: string;
-  error?: string;
+  failureReason?: string;
+  cancelledAt?: string;
+  retryCount?: number; // NEW: Show how many times retry was attempted
 }
 
 interface ReminderTimelineProps {
   reminders: Reminder[];
   invoiceStatus: string;
+  dueDate?: string; // NEW: For calculating expected dates
+  reminderConfig?: {
+    // NEW: Show reminder configuration
+    enabled: boolean;
+    sequenceType?: "default" | "aggressive" | "gentle";
+    remindersSent?: number;
+    nextReminderDate?: string;
+  };
   onSendManual: () => void;
   onCancelReminders: () => void;
+  // onRetryReminder?: (reminderId: string) => void; // NEW: Retry individual reminder
   isSending: boolean;
   isLoading?: boolean;
 }
@@ -100,8 +124,11 @@ const statusConfig = {
 export function ReminderTimeline({
   reminders,
   invoiceStatus,
+  dueDate,
+  reminderConfig: config,
   onSendManual,
   onCancelReminders,
+  // onRetryReminder,
   isSending,
   isLoading = false,
 }: ReminderTimelineProps) {
@@ -115,6 +142,15 @@ export function ReminderTimeline({
   );
 
   const isInvoicePaid = invoiceStatus === "paid";
+
+  // NEW: Calculate expected reminder dates if no reminders exist yet
+  const expectedDates =
+    dueDate && sortedReminders.length === 0
+      ? reminderService.calculateReminderDates(
+          new Date(dueDate),
+          config?.sequenceType || "default"
+        )
+      : [];
 
   if (isLoading) {
     return (
@@ -165,14 +201,43 @@ export function ReminderTimeline({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* NEW: Reminder Stats */}
+        {config && (config.remindersSent! > 0 || config.nextReminderDate) && (
+          <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 text-sm">
+            <Info className="h-4 w-4 text-muted-foreground" />
+            <div className="flex-1">
+              {config.remindersSent! > 0 && (
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">
+                    {config.remindersSent}
+                  </strong>{" "}
+                  reminder
+                  {config.remindersSent !== 1 ? "s" : ""} sent
+                </span>
+              )}
+              {config.remindersSent! > 0 && config.nextReminderDate && (
+                <span className="text-muted-foreground"> • </span>
+              )}
+              {config.nextReminderDate && !isInvoicePaid && (
+                <span className="text-muted-foreground">
+                  Next on{" "}
+                  <strong className="text-foreground">
+                    {format(new Date(config.nextReminderDate), "MMM d")}
+                  </strong>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Timeline */}
         <div className="relative space-y-4">
           {/* Timeline line */}
-          {sortedReminders.length > 0 && (
+          {(sortedReminders.length > 0 || expectedDates.length > 0) && (
             <div className="absolute left-4 top-6 bottom-6 w-0.5 bg-border" />
           )}
 
-          {sortedReminders.length === 0 ? (
+          {sortedReminders.length === 0 && expectedDates.length === 0 ? (
             <div className="text-center py-8">
               <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
@@ -182,6 +247,32 @@ export function ReminderTimeline({
                 Reminders will be scheduled when invoice is sent
               </p>
             </div>
+          ) : sortedReminders.length === 0 && expectedDates.length > 0 ? (
+            // NEW: Show expected reminder dates before invoice is sent
+            <>
+              <p className="text-sm text-muted-foreground mb-4">
+                These reminders will be scheduled when you send the invoice:
+              </p>
+              {expectedDates.map((expected, index) => (
+                <div key={index} className="relative flex gap-4">
+                  <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 bg-muted/30">
+                    <Clock className="h-4 w-4 text-muted-foreground/50" />
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm text-muted-foreground">
+                        {reminderService.getReminderTypeLabel(
+                          expected.type as any
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Will be sent on {format(expected.date, "MMM d, yyyy")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
           ) : (
             sortedReminders.map((reminder) => {
               const typeConfig = reminderConfig[reminder.type];
@@ -189,7 +280,7 @@ export function ReminderTimeline({
               const StatusIcon = statusInfo.icon;
 
               return (
-                <div key={reminder._id} className="relative flex gap-4">
+                <div key={reminder.id} className="relative flex gap-4">
                   {/* Status Icon */}
                   <div
                     className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 ${statusInfo.borderColor} ${statusInfo.bgColor}`}
@@ -208,6 +299,12 @@ export function ReminderTimeline({
                           <Badge variant={statusInfo.badge} className="text-xs">
                             {statusInfo.label}
                           </Badge>
+                          {/* NEW: Show retry count if failed and retried */}
+                          {reminder.retryCount && reminder.retryCount > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              Retry {reminder.retryCount}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {typeConfig.description}
@@ -246,6 +343,15 @@ export function ReminderTimeline({
                           <AlertCircle className="h-3 w-3" />
                           <span>Failed to send</span>
                         </div>
+                      ) : reminder.status === "cancelled" &&
+                        reminder.cancelledAt ? (
+                        <div className="flex items-center gap-1">
+                          <X className="h-3 w-3" />
+                          <span>
+                            Cancelled{" "}
+                            {format(new Date(reminder.cancelledAt), "MMM d")}
+                          </span>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-1">
                           <X className="h-3 w-3" />
@@ -254,10 +360,24 @@ export function ReminderTimeline({
                       )}
                     </div>
 
-                    {/* Error message if failed */}
-                    {reminder.status === "failed" && reminder.error && (
-                      <div className="mt-2 text-xs text-destructive">
-                        {reminder.error}
+                    {/* Error message with retry button */}
+                    {reminder.status === "failed" && reminder.failureReason && (
+                      <div className="mt-2 p-2 rounded-md bg-destructive/10 border border-destructive/20">
+                        <p className="text-xs text-destructive font-medium mb-2">
+                          Error: {reminder.failureReason}
+                        </p>
+                        {/* NEW: Retry individual reminder */}
+                        {/* {onRetryReminder && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-xs"
+                            onClick={() => onRetryReminder(reminder._id)}
+                          >
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                            Retry This Reminder
+                          </Button>
+                        )} */}
                       </div>
                     )}
                   </div>
