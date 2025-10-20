@@ -34,9 +34,20 @@ import { ReminderTimeline } from "@/components/reminders/reminder-timeline";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useState } from "react";
-import { RecordPaymentDialog } from "@/components/payments/record-payment-dialog";
+import { PaymentLinkDisplay } from "@/components/invoices/PaymentLinkDisplay";
 import reminderService from "@/services/reminderService";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { useSendInvoice } from "@/hooks/queries/use-invoices-query";
 
 const statusColors = {
   draft: "secondary",
@@ -48,10 +59,15 @@ const statusColors = {
 
 export default function InvoiceDetail() {
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [invoiceToSend, setInvoiceToSend] = useState<string | null>(null);
   const { id } = useParams<{ id: string }>();
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const sendInvoiceMutation = useSendInvoice();
 
   // Fetch invoice data
   const {
@@ -64,6 +80,24 @@ export default function InvoiceDetail() {
     enabled: !!id,
   });
   // console.log(invoiceData);
+
+  //   const {
+  //   data: invoiceData,
+  //   isLoading: invoiceLoading,
+  //   error: invoiceError,
+  // } = useQuery({
+  //   queryKey: ["invoice", id],
+  //   queryFn: () => invoiceService.getInvoiceById(id!),
+  //   enabled: !!id,
+  //   refetchInterval: (data) => {
+  //     // Auto-refresh every 5 seconds if payment link is being generated
+  //     const invoice = data?.data;
+  //     if (invoice?.status === "sent" && !invoice?.payment?.paymentLink) {
+  //       return 5000;
+  //     }
+  //     return false;
+  //   },
+  // });
 
   const invoice = invoiceData?.data;
 
@@ -193,7 +227,8 @@ export default function InvoiceDetail() {
     try {
       await invoiceService.downloadInvoice(id);
       toast({
-        title: "Success",
+        // variant: "success",
+        title: "success",
         description: "Invoice downloaded successfully",
       });
     } catch (error: any) {
@@ -205,13 +240,26 @@ export default function InvoiceDetail() {
     }
   };
 
-  const handleSendInvoice = () => {
-    toast({
-      title: "Coming soon",
-      description: "Email sending will be available soon.",
-    });
+  const handleSendInvoice = (id: string) => {
+    setInvoiceToSend(id);
+    setSendDialogOpen(true);
   };
-  console.log({ invoice });
+
+  const confirmSend = async () => {
+    if (!invoiceToSend) return;
+
+    try {
+      await sendInvoiceMutation.mutateAsync(invoiceToSend);
+      setSendDialogOpen(false);
+      setInvoiceToSend(null);
+      toast({
+        title: "Success",
+        description: "Invoice sent successfully.",
+      });
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
 
   // Loading state
   if (invoiceLoading) {
@@ -295,7 +343,7 @@ export default function InvoiceDetail() {
             </Button>
           )}
           {invoice.status === "draft" && (
-            <Button onClick={handleSendInvoice}>
+            <Button onClick={() => handleSendInvoice(id!)}>
               <Send className="mr-2 h-4 w-4" />
               Send Invoice
             </Button>
@@ -456,87 +504,37 @@ export default function InvoiceDetail() {
             </CardContent>
           </Card>
 
-          {invoice.status !== "paid" && invoice.paymentLink && (
-            <Card className="border-2 border-primary/20 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Online Payment
-                </CardTitle>
-                <CardDescription>
-                  Secure payment powered by Stripe
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">
-                    Pay online securely with credit or debit card
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>Instant payment confirmation</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>Secure encryption (SSL/TLS)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>PCI DSS compliant</span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => window.open(invoice.paymentLink, "_blank")}
-                    className="w-full"
-                    size="lg"
-                  >
-                    <CreditCard className="mr-2 h-5 w-5" />
-                    Pay ${invoice.total.toFixed(2)} {invoice.currency} Now
-                    <ExternalLink className="ml-2 h-4 w-4" />
-                  </Button>
-
-                  <p className="text-xs text-center text-muted-foreground">
-                    You'll be redirected to Stripe's secure checkout page
-                  </p>
-                </div>
-
-                {/* Payment Link for copying */}
-                <div className="pt-2">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Or copy payment link:
-                  </p>
-                  <div className="flex gap-2">
-                    <Input
-                      value={invoice.paymentLink}
-                      readOnly
-                      className="text-xs"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(invoice.paymentLink!);
-                        toast({
-                          title: "Link Copied",
-                          description: "Payment link copied to clipboard",
-                        });
-                      }}
-                    >
-                      Copy
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <PaymentLinkDisplay
+            invoice={invoice}
+            onSendPaymentLink={() => {
+              toast({
+                title: "Feature coming soon",
+                description:
+                  "Send payment link via email will be available soon",
+              });
+            }}
+            isSendingLink={false}
+          />
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {invoice.status === "paid" && (
+            <Alert className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800 dark:text-green-400">
+                Payment Received
+              </AlertTitle>
+              <AlertDescription className="text-green-700 dark:text-green-300">
+                This invoice has been paid
+                {invoice.paidAt && (
+                  <> on {format(new Date(invoice.paidAt), "MMM d, yyyy")}</>
+                )}
+                {invoice.paymentMethod && <> via {invoice.paymentMethod}</>}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Reminder Timeline */}
           {invoice.status !== "draft" && (
             // <ReminderTimeline
@@ -571,7 +569,7 @@ export default function InvoiceDetail() {
           )}
 
           {/* Client Info Card */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Client Information</CardTitle>
             </CardHeader>
@@ -667,7 +665,7 @@ export default function InvoiceDetail() {
                 </div>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Payment Status Card */}
           {/* {invoice.status === "paid" && invoice.paidAt && (
@@ -697,22 +695,6 @@ export default function InvoiceDetail() {
               </CardContent>
             </Card>
           )} */}
-
-          {invoice.status === "paid" && (
-            <Alert className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertTitle className="text-green-800 dark:text-green-400">
-                Payment Received
-              </AlertTitle>
-              <AlertDescription className="text-green-700 dark:text-green-300">
-                This invoice has been paid
-                {invoice.paidAt && (
-                  <> on {format(new Date(invoice.paidAt), "MMM d, yyyy")}</>
-                )}
-                {invoice.paymentMethod && <> via {invoice.paymentMethod}</>}
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
       </div>
       {/* Dialog */}
@@ -723,6 +705,29 @@ export default function InvoiceDetail() {
         onSubmit={handleRecordPayment}
         isSubmitting={createPaymentMutation.isPending}
       /> */}
+
+      {/* Send Confirmation Dialog */}
+      <AlertDialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Invoice</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the invoice as sent and schedule automatic payment
+              reminders. The client will receive reminder emails based on your
+              configured schedule.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmSend}
+              disabled={sendInvoiceMutation.isPending}
+            >
+              {sendInvoiceMutation.isPending ? "Sending..." : "Send Invoice"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -8,7 +8,12 @@ export interface Reminder {
   invoiceId: string;
   userId: string;
   clientId: string;
-  type: "before_due" | "overdue_3" | "overdue_7" | "manual";
+  type:
+    | "before_due"
+    | "first_overdue"
+    | "second_overdue"
+    | "final_notice"
+    | "manual";
   status: "scheduled" | "sent" | "failed" | "cancelled";
   scheduledFor: string;
   sentAt?: string;
@@ -38,8 +43,9 @@ export interface ReminderStats {
   cancelled: number;
   byType: {
     before_due: number;
-    overdue_3: number;
-    overdue_7: number;
+    first_overdue: number;
+    second_overdue: number;
+    final_notice: number;
     manual: number;
   };
 }
@@ -116,18 +122,18 @@ class ReminderService {
     const sequences = {
       default: [
         { type: "before_due", daysOffset: -1 },
-        { type: "overdue_3", daysOffset: 3 },
-        { type: "overdue_7", daysOffset: 7 },
+        { type: "first_overdue", daysOffset: 3 },
+        { type: "final_notice", daysOffset: 7 },
       ],
       aggressive: [
-        { type: "before_due", daysOffset: -1 },
-        { type: "overdue_3", daysOffset: 1 },
-        { type: "overdue_7", daysOffset: 3 },
+        { type: "before_due", daysOffset: -2 },
+        { type: "first_overdue", daysOffset: 1 },
+        { type: "final_notice", daysOffset: 3 },
       ],
       gentle: [
-        { type: "before_due", daysOffset: -2 },
-        { type: "overdue_3", daysOffset: 7 },
-        { type: "overdue_7", daysOffset: 14 },
+        { type: "before_due", daysOffset: -3 },
+        { type: "first_overdue", daysOffset: 7 },
+        { type: "final_notice", daysOffset: 14 },
       ],
     };
 
@@ -145,8 +151,9 @@ class ReminderService {
   getReminderTypeLabel(type: Reminder["type"]): string {
     const labels = {
       before_due: "Friendly Reminder",
-      overdue_3: "First Overdue Notice",
-      overdue_7: "Final Notice",
+      first_overdue: "First Overdue Notice",
+      second_overdue: "Second Overdue Notice",
+      final_notice: "Final Notice",
       manual: "Manual Reminder",
     };
     return labels[type] || type;

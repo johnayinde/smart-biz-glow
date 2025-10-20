@@ -341,19 +341,23 @@ export default function Invoices() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {invoice.paymentLink && invoice.status !== "paid" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(invoice.paymentLink, "_blank");
-                              }}
-                            >
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              Pay Online
-                            </Button>
-                          )}
+                          {invoice.payment?.paymentLink &&
+                            invoice.status !== "paid" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(
+                                    invoice.payment?.paymentLink,
+                                    "_blank"
+                                  );
+                                }}
+                              >
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Pay Online
+                              </Button>
+                            )}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>

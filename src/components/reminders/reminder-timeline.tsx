@@ -1,10 +1,11 @@
 // src/components/reminders/reminder-timeline.tsx
-// Enhanced version - combines your existing code with additional features
-
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import {
   Clock,
   Check,
@@ -14,27 +15,20 @@ import {
   Mail,
   Info,
   RotateCcw,
+  XCircle,
+  Calendar,
+  CheckCircle2,
 } from "lucide-react";
-import { format } from "date-fns";
-import reminderService from "@/services/reminderService";
-
-type ReminderType = "before_due" | "overdue_3" | "overdue_7" | "manual";
-type ReminderStatus = "scheduled" | "sent" | "failed" | "cancelled";
-
-import type { Reminder as ServiceReminder } from "@/services/reminderService";
+import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Alert, AlertDescription } from "../ui/alert";
-
-interface Reminder extends ServiceReminder {
-  // Extend the Reminder type from reminderService
-}
+import reminderService from "@/services/reminderService";
+import type { Reminder } from "@/services/reminderService";
 
 interface ReminderTimelineProps {
   reminders: Reminder[];
   invoiceStatus: string;
-  dueDate?: string; // NEW: For calculating expected dates
+  dueDate?: string;
   reminderConfig?: {
-    // NEW: Show reminder configuration
     enabled: boolean;
     sequenceType?: "default" | "aggressive" | "gentle";
     remindersSent?: number;
@@ -42,78 +36,85 @@ interface ReminderTimelineProps {
   };
   onSendManual: () => void;
   onCancelReminders: () => void;
-  onRetryReminder?: (reminderId: string) => void; // ← Make sure this is included
+  onRetryReminder?: (reminderId: string) => void;
   isSending: boolean;
   isLoading?: boolean;
 }
 
-const reminderConfig = {
+// Reminder type configurations
+const reminderTypeConfig = {
   before_due: {
-    title: "Friendly Reminder",
-    description: "1 day before due date",
-    icon: Clock,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    borderColor: "border-blue-500",
+    label: "Friendly Reminder",
+    description: "Before due date",
+    icon: Mail,
+    iconColor: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+    borderColor: "border-blue-200 dark:border-blue-800",
+    dotColor: "bg-blue-500",
   },
-  overdue_3: {
-    title: "First Overdue Notice",
-    description: "3 days after due date",
+  first_overdue: {
+    label: "First Overdue Notice",
+    description: "Payment overdue",
     icon: AlertCircle,
-    color: "text-orange-600",
-    bgColor: "bg-orange-50 dark:bg-orange-900/20",
-    borderColor: "border-orange-500",
+    iconColor: "text-orange-600 dark:text-orange-400",
+    bgColor: "bg-orange-50 dark:bg-orange-950/30",
+    borderColor: "border-orange-200 dark:border-orange-800",
+    dotColor: "bg-orange-500",
   },
-  overdue_7: {
-    title: "Final Notice",
-    description: "7 days after due date",
+  second_overdue: {
+    label: "Second Overdue Notice",
+    description: "Still unpaid",
     icon: AlertCircle,
-    color: "text-red-600",
-    bgColor: "bg-red-50 dark:bg-red-900/20",
-    borderColor: "border-red-500",
+    iconColor: "text-orange-700 dark:text-orange-500",
+    bgColor: "bg-orange-100 dark:bg-orange-950/40",
+    borderColor: "border-orange-300 dark:border-orange-700",
+    dotColor: "bg-orange-600",
+  },
+  final_notice: {
+    label: "Final Notice",
+    description: "Urgent action required",
+    icon: AlertCircle,
+    iconColor: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-50 dark:bg-red-950/30",
+    borderColor: "border-red-200 dark:border-red-800",
+    dotColor: "bg-red-500",
   },
   manual: {
-    title: "Manual Reminder",
-    description: "Sent manually by you",
+    label: "Manual Reminder",
+    description: "Sent manually",
     icon: Send,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    borderColor: "border-purple-500",
+    iconColor: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-50 dark:bg-purple-950/30",
+    borderColor: "border-purple-200 dark:border-purple-800",
+    dotColor: "bg-purple-500",
   },
 };
 
+// Status configurations
 const statusConfig = {
   scheduled: {
-    icon: Clock,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    borderColor: "border-blue-500",
     badge: "default" as const,
     label: "Scheduled",
+    icon: Clock,
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   sent: {
-    icon: Check,
-    color: "text-green-600",
-    bgColor: "bg-green-50 dark:bg-green-900/20",
-    borderColor: "border-green-500",
     badge: "default" as const,
     label: "Sent",
+    icon: CheckCircle2,
+    iconColor: "text-green-600 dark:text-green-400",
   },
   failed: {
-    icon: X,
-    color: "text-red-600",
-    bgColor: "bg-red-50 dark:bg-red-900/20",
-    borderColor: "border-red-500",
     badge: "destructive" as const,
     label: "Failed",
+    icon: XCircle,
+    iconColor: "text-red-600 dark:text-red-400",
   },
   cancelled: {
-    icon: X,
-    color: "text-gray-600",
-    bgColor: "bg-gray-50 dark:bg-gray-900/20",
-    borderColor: "border-gray-400",
     badge: "secondary" as const,
     label: "Cancelled",
+    icon: X,
+    iconColor: "text-gray-600 dark:text-gray-400",
   },
 };
 
@@ -121,13 +122,18 @@ export function ReminderTimeline({
   reminders,
   invoiceStatus,
   dueDate,
-  reminderConfig: config,
+  reminderConfig,
   onSendManual,
   onCancelReminders,
   onRetryReminder,
   isSending,
   isLoading = false,
 }: ReminderTimelineProps) {
+  const [expandedReminders, setExpandedReminders] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Sort reminders by scheduled date
   const sortedReminders = [...reminders].sort(
     (a, b) =>
       new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
@@ -136,27 +142,31 @@ export function ReminderTimeline({
   const hasActiveReminders = sortedReminders.some(
     (r) => r.status === "scheduled"
   );
-
   const isInvoicePaid = invoiceStatus === "paid";
+  const isInvoiceCancelled = invoiceStatus === "cancelled";
 
-  // NEW: Calculate expected reminder dates if no reminders exist yet
+  // Calculate expected reminder dates if no reminders exist yet
   const expectedDates =
     dueDate && sortedReminders.length === 0
       ? reminderService.calculateReminderDates(
           new Date(dueDate),
-          config?.sequenceType || "default"
+          reminderConfig?.sequenceType || "default"
         )
       : [];
 
-  // Helper function to check if retry is available
-  const canRetryReminder = (reminder: Reminder) => {
-    return reminderService.canRetry(reminder);
+  const toggleReminderExpansion = (reminderId: string) => {
+    setExpandedReminders((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(reminderId)) {
+        newSet.delete(reminderId);
+      } else {
+        newSet.add(reminderId);
+      }
+      return newSet;
+    });
   };
 
-  const getRemainingRetries = (reminder: Reminder) => {
-    return reminderService.getRemainingRetries(reminder);
-  };
-
+  // Loading state
   if (isLoading) {
     return (
       <Card>
@@ -166,7 +176,7 @@ export function ReminderTimeline({
         <CardContent className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex gap-4">
-              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-3 w-48" />
@@ -183,15 +193,18 @@ export function ReminderTimeline({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Automated Reminders</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Payment Reminders
+            </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Payment reminders sent automatically
+              Automated reminders for this invoice
             </p>
           </div>
           <Badge
             variant={
-              isInvoicePaid
-                ? "default"
+              isInvoicePaid || isInvoiceCancelled
+                ? "secondary"
                 : hasActiveReminders
                 ? "default"
                 : "secondary"
@@ -199,236 +212,313 @@ export function ReminderTimeline({
           >
             {isInvoicePaid
               ? "Completed"
+              : isInvoiceCancelled
+              ? "Cancelled"
               : hasActiveReminders
               ? "Active"
               : "Inactive"}
           </Badge>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-6">
-        {/* NEW: Reminder Stats */}
-        {config && (config.remindersSent! > 0 || config.nextReminderDate) && (
-          <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 text-sm">
-            <Info className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1">
-              {config.remindersSent! > 0 && (
-                <span className="text-muted-foreground">
-                  <strong className="text-foreground">
-                    {config.remindersSent}
-                  </strong>{" "}
-                  reminder
-                  {config.remindersSent !== 1 ? "s" : ""} sent
-                </span>
-              )}
-              {config.remindersSent! > 0 && config.nextReminderDate && (
-                <span className="text-muted-foreground"> • </span>
-              )}
-              {config.nextReminderDate && !isInvoicePaid && (
-                <span className="text-muted-foreground">
-                  Next on{" "}
-                  <strong className="text-foreground">
-                    {format(new Date(config.nextReminderDate), "MMM d")}
-                  </strong>
-                </span>
-              )}
+        {/* Reminder Stats */}
+        {reminderConfig &&
+          (reminderConfig.remindersSent! > 0 ||
+            reminderConfig.nextReminderDate) && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div className="flex-1 text-sm">
+                {reminderConfig.remindersSent! > 0 && (
+                  <span className="text-muted-foreground">
+                    <strong className="text-foreground">
+                      {reminderConfig.remindersSent}
+                    </strong>{" "}
+                    reminder{reminderConfig.remindersSent !== 1 ? "s" : ""} sent
+                  </span>
+                )}
+                {reminderConfig.remindersSent! > 0 &&
+                  reminderConfig.nextReminderDate && (
+                    <span className="text-muted-foreground"> • </span>
+                  )}
+                {reminderConfig.nextReminderDate && !isInvoicePaid && (
+                  <span className="text-muted-foreground">
+                    Next on{" "}
+                    <strong className="text-foreground">
+                      {format(
+                        new Date(reminderConfig.nextReminderDate),
+                        "MMM d, h:mm a"
+                      )}
+                    </strong>
+                  </span>
+                )}
+              </div>
             </div>
+          )}
+
+        {/* Action Buttons */}
+        {!isInvoicePaid && !isInvoiceCancelled && invoiceStatus !== "draft" && (
+          <div className="flex gap-2">
+            <Button
+              onClick={onSendManual}
+              disabled={isSending}
+              size="sm"
+              variant="outline"
+              className="flex-1"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {isSending ? "Sending..." : "Send Manual Reminder"}
+            </Button>
+            {hasActiveReminders && (
+              <Button
+                onClick={onCancelReminders}
+                size="sm"
+                variant="ghost"
+                className="flex-1"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancel Reminders
+              </Button>
+            )}
           </div>
         )}
+
+        <Separator />
 
         {/* Timeline */}
-        <div className="relative space-y-4">
+        <div className="relative space-y-6">
           {/* Timeline line */}
           {(sortedReminders.length > 0 || expectedDates.length > 0) && (
-            <div className="absolute left-4 top-6 bottom-6 w-0.5 bg-border" />
+            <div className="absolute left-5 top-8 bottom-8 w-0.5 bg-border" />
           )}
 
-          {sortedReminders.length === 0 && expectedDates.length === 0 ? (
+          {/* Empty state */}
+          {sortedReminders.length === 0 && expectedDates.length === 0 && (
             <div className="text-center py-8">
-              <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">
-                No reminders scheduled yet
+              <Mail className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-sm font-medium text-muted-foreground">
+                No reminders scheduled
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Reminders will be scheduled when invoice is sent
+                Reminders will be scheduled when the invoice is sent
               </p>
             </div>
-          ) : sortedReminders.length === 0 && expectedDates.length > 0 ? (
-            // NEW: Show expected reminder dates before invoice is sent
+          )}
+
+          {/* Expected reminders (before invoice is sent) */}
+          {sortedReminders.length === 0 && expectedDates.length > 0 && (
             <>
-              <p className="text-sm text-muted-foreground mb-4">
-                These reminders will be scheduled when you send the invoice:
-              </p>
-              {expectedDates.map((expected, index) => (
-                <div key={index} className="relative flex gap-4">
-                  <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 bg-muted/30">
-                    <Clock className="h-4 w-4 text-muted-foreground/50" />
-                  </div>
-                  <div className="flex-1 pb-4">
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm text-muted-foreground">
-                        {reminderService.getReminderTypeLabel(
-                          expected.type as any
-                        )}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Will be sent on {format(expected.date, "MMM d, yyyy")}
-                      </p>
+              <Alert>
+                <Calendar className="h-4 w-4" />
+                <AlertDescription>
+                  These reminders will be scheduled when you send the invoice
+                </AlertDescription>
+              </Alert>
+              {expectedDates.map((expected, index) => {
+                const typeConfig =
+                  reminderTypeConfig[
+                    expected.type as keyof typeof reminderTypeConfig
+                  ];
+                const TypeIcon = typeConfig.icon;
+
+                return (
+                  <div key={index} className="relative flex gap-4">
+                    {/* Dot */}
+                    <div
+                      className={cn(
+                        "relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed flex-shrink-0",
+                        "bg-muted/50 border-muted-foreground/30"
+                      )}
+                    >
+                      <TypeIcon className="h-5 w-5 text-muted-foreground/50" />
                     </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          ) : (
-            sortedReminders.map((reminder) => {
-              const typeConfig = reminderConfig[reminder.type];
-              const statusInfo = statusConfig[reminder.status];
-              const StatusIcon = statusInfo.icon;
 
-              const reminderInfo = reminderConfig[reminder.type];
-              const ReminderIcon = reminderInfo.icon;
-
-              return (
-                <div key={reminder.id} className="relative flex gap-4">
-                  {/* Status Icon */}
-                  <div
-                    className={cn(
-                      "relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2",
-                      statusInfo.bgColor,
-                      statusInfo.borderColor
-                    )}
-                  >
-                    <StatusIcon className={cn("h-5 w-5", statusInfo.color)} />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 space-y-2 pb-8">
-                    <div className="flex items-start justify-between gap-2">
+                    {/* Content */}
+                    <div className="flex-1 pb-2">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-sm">
-                            {reminderInfo.title}
-                          </p>
-                          <Badge variant={statusInfo.badge}>
-                            {statusInfo.label}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {reminderInfo.description}
+                        <p className="font-medium text-sm text-muted-foreground">
+                          {typeConfig.label}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {reminder.sentAt
-                            ? `Sent ${format(
-                                new Date(reminder.sentAt),
-                                "MMM d 'at' h:mm a"
-                              )}`
-                            : `Scheduled for ${format(
-                                new Date(reminder.scheduledFor),
-                                "MMM d 'at' h:mm a"
-                              )}`}
+                          Scheduled for {format(expected.date, "MMM d, yyyy")}
                         </p>
-
-                        {/* Show retry count if failed */}
-                        {reminder.status === "failed" &&
-                          reminder.retryCount > 0 && (
-                            <p className="text-xs text-orange-600">
-                              Retry attempt {reminder.retryCount}/3
-                            </p>
-                          )}
-
-                        {/* Failure reason */}
-                        {/* {reminder.status === "failed" &&
-                          reminder.failureReason && (
-                            <Alert variant="destructive" className="mt-2">
-                              <AlertCircle className="h-4 w-4" />
-                              <AlertDescription className="text-xs">
-                                {reminder.failureReason}
-                              </AlertDescription>
-                            </Alert>
-                          )} */}
                       </div>
                     </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
 
-                    {/* Retry Button for Failed Reminders */}
-                    {reminder.status === "failed" &&
-                      onRetryReminder &&
-                      canRetryReminder(reminder) && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onRetryReminder(reminder.id)}
-                          disabled={isSending}
-                          className="mt-2"
-                        >
-                          <RotateCcw className="mr-2 h-3 w-3" />
-                          Retry ({getRemainingRetries(reminder)} attempts left)
-                        </Button>
-                      )}
+          {/* Actual reminders */}
+          {sortedReminders.map((reminder, index) => {
+            const typeConfig =
+              reminderTypeConfig[
+                reminder.type as keyof typeof reminderTypeConfig
+              ];
+            const statusInfo =
+              statusConfig[reminder.status as keyof typeof statusConfig];
+            // const TypeIcon = typeConfig.icon;
+            const StatusIcon = statusInfo.icon;
+            const isExpanded = expandedReminders.has(reminder.id);
+            const canRetry = reminderService.canRetry(reminder);
 
-                    {/* Max retries reached message */}
-                    {reminder.status === "failed" &&
-                      !canRetryReminder(reminder) && (
-                        <Alert variant="destructive" className="mt-2">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription className="text-xs">
-                            Maximum retry attempts reached. Please contact
-                            support or try manual reminder.
-                          </AlertDescription>
-                        </Alert>
+            return (
+              <div key={reminder.id} className="relative flex gap-4">
+                {/* Status Dot */}
+                <div
+                  className={cn(
+                    "relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 flex-shrink-0",
+                    typeConfig?.bgColor,
+                    typeConfig?.borderColor
+                  )}
+                >
+                  <StatusIcon
+                    className={cn("h-5 w-5", statusInfo?.iconColor)}
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 space-y-2 pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-sm">
+                          {typeConfig?.label}
+                        </p>
+                        <Badge variant={statusInfo?.badge} className="text-xs">
+                          {statusInfo?.label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {typeConfig?.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Timing info */}
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    {reminder.status === "scheduled" && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          Scheduled for{" "}
+                          {format(
+                            new Date(reminder.scheduledFor),
+                            "MMM d, h:mm a"
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {reminder.status === "sent" && reminder.sentAt && (
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        <span>
+                          Sent{" "}
+                          {formatDistanceToNow(new Date(reminder.sentAt), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    {reminder.status === "failed" && (
+                      <div className="flex items-center gap-1">
+                        <XCircle className="h-3 w-3" />
+                        <span>Failed to send</span>
+                      </div>
+                    )}
+                    {reminder.status === "cancelled" &&
+                      reminder.cancelledAt && (
+                        <div className="flex items-center gap-1">
+                          <X className="h-3 w-3" />
+                          <span>
+                            Cancelled{" "}
+                            {formatDistanceToNow(
+                              new Date(reminder.cancelledAt),
+                              {
+                                addSuffix: true,
+                              }
+                            )}
+                          </span>
+                        </div>
                       )}
                   </div>
+
+                  {/* Email details (expandable) */}
+                  {reminder.status === "sent" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => toggleReminderExpansion(reminder.id)}
+                    >
+                      {isExpanded ? "Hide details" : "Show details"}
+                    </Button>
+                  )}
+
+                  {isExpanded && (
+                    <div
+                      className={cn(
+                        "mt-2 p-3 rounded-lg border space-y-2",
+                        typeConfig.bgColor,
+                        typeConfig.borderColor
+                      )}
+                    >
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium">Email Details</p>
+                        <p className="text-xs text-muted-foreground">
+                          <strong>To:</strong> {reminder.recipientEmail}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Subject:</strong> {reminder.subject}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Retry button for failed reminders */}
+                  {reminder.status === "failed" &&
+                    canRetry &&
+                    onRetryReminder && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onRetryReminder(reminder.id)}
+                          className="text-xs h-7"
+                        >
+                          <RotateCcw className="mr-1 h-3 w-3" />
+                          Retry ({reminderService.getRemainingRetries(
+                            reminder
+                          )}{" "}
+                          left)
+                        </Button>
+                        {reminder.failureReason && (
+                          <p className="text-xs text-red-600 dark:text-red-400">
+                            {reminder.failureReason}
+                          </p>
+                        )}
+                      </div>
+                    )}
                 </div>
-              );
-            })
-          )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Actions */}
-        {!isInvoicePaid && (
-          <>
-            <div className="pt-2 space-y-2">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={onSendManual}
-                disabled={isSending}
-              >
-                <Send className="mr-2 h-4 w-4" />
-                {isSending ? "Sending..." : "Send Reminder Now"}
-              </Button>
-              {hasActiveReminders && (
-                <Button
-                  variant="ghost"
-                  className="w-full text-destructive hover:text-destructive"
-                  onClick={onCancelReminders}
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Cancel All Reminders
-                </Button>
-              )}
-            </div>
-
-            {/* Info */}
-            <div className="rounded-lg bg-muted p-3">
-              <p className="text-xs text-muted-foreground">
-                <strong>Note:</strong> Reminders are sent automatically based on
-                the invoice due date. Mark the invoice as paid to stop all
-                reminders.
-              </p>
-            </div>
-          </>
-        )}
-
-        {/* Paid invoice message */}
-        {isInvoicePaid && (
-          <div className="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3">
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-green-600" />
-              <p className="text-xs text-green-700 dark:text-green-400 font-medium">
-                Invoice paid - All reminders have been cancelled
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Info alert at bottom */}
+        {!isInvoicePaid &&
+          !isInvoiceCancelled &&
+          sortedReminders.length > 0 && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Reminders automatically stop when the invoice is marked as paid.
+                You can also send manual reminders or cancel all scheduled
+                reminders anytime.
+              </AlertDescription>
+            </Alert>
+          )}
       </CardContent>
     </Card>
   );

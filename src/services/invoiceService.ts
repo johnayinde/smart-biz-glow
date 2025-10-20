@@ -47,9 +47,11 @@ export interface Invoice {
   paidAt?: string;
   createdAt: string;
   updatedAt: string;
-  paymentLink?: string;
-  stripeCheckoutSessionId?: string;
-  stripePaymentIntentId?: string;
+  payment?: {
+    paymentLink?: string;
+    stripeCheckoutSessionId?: string;
+    stripePaymentIntentId?: string;
+  };
   paymentMethod?: string;
   // Populated fields
   client?: {
