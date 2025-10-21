@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
 
         toast({
-          title: "Welcome back!",
+          title: "success",
           description: `Logged in as ${data.user.email}`,
         });
       } catch (err: any) {

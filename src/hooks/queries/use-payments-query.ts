@@ -43,7 +43,7 @@ export const usePaymentStatsQuery = () => {
       // This endpoint might need to be added to your payment service
       // For now, we'll aggregate from the payments list
       const response = await paymentService.getPayments({ limit: 1000 });
-      const payments = response.payments || [];
+      const payments = response.data || [];
 
       const stats = payments.reduce(
         (acc, payment) => {
