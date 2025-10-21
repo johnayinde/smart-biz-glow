@@ -60,6 +60,12 @@ export interface AnalyticsFilters {
   period?: "week" | "month" | "quarter" | "year";
 }
 
+export interface ExportFilters {
+  startDate?: string;
+  endDate?: string;
+  format?: "csv" | "pdf";
+}
+
 class AnalyticsService {
   async getDashboardStats(filters?: AnalyticsFilters) {
     const params = new URLSearchParams();
@@ -154,33 +160,70 @@ class AnalyticsService {
     return apiService.get<{ data: RevenueData[] }>(url);
   }
 
+  /**
+   * Export data as CSV or PDF with proper file download handling
+   */
   async exportData(
     type: "invoices" | "payments" | "clients",
-    filters?: AnalyticsFilters
-  ) {
+    filters?: ExportFilters
+  ): Promise<void> {
     const params = new URLSearchParams();
 
     if (filters?.startDate) params.append("startDate", filters.startDate);
     if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.format) params.append("format", filters.format);
 
     const queryString = params.toString();
     const url = `/analytics/export/${type}${
       queryString ? `?${queryString}` : ""
     }`;
 
-    // This returns a blob/CSV file
-    const response = await fetch(`${apiService.getToken()}${url}`, {
-      headers: {
-        Authorization: `Bearer ${apiService.getToken()}`,
-      },
-    });
+    try {
+      const response = await apiService.get<Blob>(url, {
+        responseType: "blob",
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to export data");
+      // Get the filename from content-disposition header or use default
+      // const contentDisposition = response.headers.get("content-disposition");
+      const contentDisposition =
+        (response as any).headers?.["content-disposition"] ?? null;
+      let filename = `${type}-export-${new Date().getTime()}.csv`;
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Determine file type from format or content-type
+      // const contentType = response.headers.get("content-type") || "text/csv";
+      const contentType =
+        (response as any).headers?.["content-type"] || "text/csv";
+      const isPdf = filters?.format === "pdf" || contentType.includes("pdf");
+
+      if (isPdf) {
+        filename = filename.replace(/\.csv$/, ".pdf");
+      }
+
+      // Get the blob and create download link
+      // const blob = new Blob([response.data], { type: contentType });
+      const blob =
+        response.data instanceof Blob
+          ? response.data
+          : new Blob([response.data], { type: contentType });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Export error:", error);
+      throw error;
     }
-
-    const blob = await response.blob();
-    return blob;
   }
 }
 
