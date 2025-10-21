@@ -15,6 +15,9 @@ import {
   Trash2,
   Edit,
   FileText,
+  Archive,
+  Filter,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +67,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
+import { ExportFilters, analyticsService } from "@/services/analyticsService";
+import { ExportButton } from "@/components/common/ExportButton";
+import { BulkAction, BulkActionsBar } from "@/components/common/BulkActionsBar";
+import {
+  AdvancedFilters,
+  AdvancedFilterValues,
+} from "@/components/common/AdvancedFilters";
+// import { Checkbox } from "@radix-ui/react-checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Clients() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -74,18 +93,37 @@ export default function Clients() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterValues>(
+    {}
+  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   // Fetch clients with search and pagination
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["clients", { page, search: searchTerm }],
+    queryKey: [
+      "clients",
+      {
+        page,
+        search: searchTerm,
+        status: statusFilter,
+        filters: advancedFilters,
+      },
+    ],
     queryFn: () =>
       clientService.getClients({
         page,
         limit: 10,
         search: searchTerm || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        sortBy: advancedFilters.sortBy || "createdAt",
+        sortOrder: advancedFilters.sortOrder || "desc",
       }),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
@@ -96,8 +134,6 @@ export default function Clients() {
   const currentPage = data?.meta.page ?? 1;
   const total = data?.meta.total ?? 0;
   console.log({ clients, totalPages, total, currentPage, isFetching });
-
-  // console.log({ clientsData });
 
   // Create client mutation
   const createMutation = useMutation({
@@ -226,6 +262,134 @@ export default function Clients() {
     }
   };
 
+  const handleExport = async (filters: ExportFilters) => {
+    try {
+      await analyticsService.exportData("clients", filters);
+    } catch (error) {
+      console.error("Export failed:", error);
+      throw error;
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(clients.map((client) => client.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds([...selectedIds, id]);
+    } else {
+      setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
+    }
+  };
+
+  const isAllSelected =
+    clients.length > 0 && selectedIds.length === clients.length;
+
+  // ADD bulk operation handlers:
+  const handleBulkDelete = async (ids: string[]) => {
+    if (
+      window.confirm(`Are you sure you want to delete ${ids.length} client(s)?`)
+    ) {
+      try {
+        const result = await clientService.bulkDelete(ids);
+        toast({
+          title: "Success",
+          description: `Deleted ${result.deletedCount} client(s)${
+            result.failedIds.length > 0
+              ? `. ${result.failedIds.length} failed.`
+              : ""
+          }`,
+        });
+        setSelectedIds([]);
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete clients",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleBulkArchive = async (ids: string[]) => {
+    if (
+      window.confirm(
+        `Are you sure you want to archive ${ids.length} client(s)?`
+      )
+    ) {
+      try {
+        const result = await clientService.bulkArchive(ids);
+        toast({
+          title: "Success",
+          description: `Archived ${result.modifiedCount} client(s)`,
+        });
+        setSelectedIds([]);
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to archive clients",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleBulkRestore = async (ids: string[]) => {
+    if (
+      window.confirm(
+        `Are you sure you want to restore ${ids.length} client(s)?`
+      )
+    ) {
+      try {
+        const result = await clientService.bulkRestore(ids);
+        toast({
+          title: "Success",
+          description: `Restored ${result.modifiedCount} client(s)`,
+        });
+        setSelectedIds([]);
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to restore clients",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // DEFINE bulk actions:
+  const bulkActions: BulkAction[] = [
+    {
+      id: "archive",
+      label: "Archive",
+      icon: <Archive className="mr-2 h-4 w-4" />,
+      variant: "outline",
+      onClick: handleBulkArchive,
+    },
+    {
+      id: "restore",
+      label: "Restore",
+      icon: <RotateCcw className="mr-2 h-4 w-4" />,
+      variant: "outline",
+      onClick: handleBulkRestore,
+    },
+    {
+      id: "delete",
+      label: "Delete",
+      icon: <Trash2 className="mr-2 h-4 w-4" />,
+      variant: "destructive",
+      onClick: handleBulkDelete,
+    },
+  ];
+
   const handleViewDetails = (clientId: string) => {
     navigate(`/clients/${clientId}`);
   };
@@ -294,10 +458,17 @@ export default function Clients() {
             Manage your clients and their information
           </p>
         </div>
-        <Button onClick={handleCreateClient}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Client
-        </Button>
+        <div className="flex gap-2">
+          <ExportButton
+            type="clients"
+            onExport={handleExport}
+            variant="outline"
+          />
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Client
+          </Button>
+        </div>
       </div>
 
       {/* Search and filters */}
@@ -315,15 +486,54 @@ export default function Clients() {
               <Input
                 placeholder="Search clients by name or email..."
                 value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
                 className="pl-10"
               />
             </div>
+
+            {/* Status Filter */}
+            <Select
+              value={statusFilter}
+              onValueChange={(value: any) => {
+                setStatusFilter(value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Advanced Filters */}
+            <AdvancedFilters
+              onApply={setAdvancedFilters}
+              onClear={() => setAdvancedFilters({})}
+              currentFilters={advancedFilters}
+              filterOptions={{
+                showDateRange: true,
+                showAmountRange: false,
+                showSort: true,
+                sortOptions: [
+                  { value: "createdAt", label: "Date Created" },
+                  { value: "name", label: "Name" },
+                  { value: "email", label: "Email" },
+                ],
+              }}
+            />
+
             <Button variant="outline" onClick={() => refetch()}>
               Refresh
             </Button>
           </div>
-
           {/* Clients Table */}
           {clients.length === 0 ? (
             <div className="text-center py-12">
@@ -339,6 +549,14 @@ export default function Clients() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={isAllSelected}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
+
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
@@ -350,6 +568,15 @@ export default function Clients() {
                   <TableBody>
                     {clients.map((client: Client) => (
                       <TableRow key={client?.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.includes(client.id)}
+                            onCheckedChange={(checked) =>
+                              handleSelectOne(client.id, checked as boolean)
+                            }
+                            aria-label={`Select ${client.name}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           <button
                             onClick={() => handleViewDetails(client?.id)}
@@ -518,6 +745,14 @@ export default function Clients() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkActionsBar
+        selectedCount={selectedIds.length}
+        totalCount={clients.length}
+        onClearSelection={() => setSelectedIds([])}
+        actions={bulkActions}
+        selectedIds={selectedIds}
+      />
     </div>
   );
 }

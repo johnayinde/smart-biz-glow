@@ -1,4 +1,5 @@
 import { apiService } from "./api";
+import { BulkDeleteResponse, BulkUpdateResponse } from "./invoiceService";
 
 export interface Client {
   _id: string;
@@ -112,6 +113,30 @@ class ClientService {
 
   async searchClients(searchTerm: string) {
     return this.getClients({ search: searchTerm, limit: 10 });
+  }
+
+  async bulkDelete(ids: string[]): Promise<BulkDeleteResponse> {
+    const response = await apiService.post<BulkDeleteResponse>(
+      "/clients/bulk/delete",
+      { ids }
+    );
+    return response.data;
+  }
+
+  async bulkArchive(ids: string[]): Promise<BulkUpdateResponse> {
+    const response = await apiService.post<BulkUpdateResponse>(
+      "/clients/bulk/archive",
+      { ids }
+    );
+    return response.data;
+  }
+
+  async bulkRestore(ids: string[]): Promise<BulkUpdateResponse> {
+    const response = await apiService.post<BulkUpdateResponse>(
+      "/clients/bulk/restore",
+      { ids }
+    );
+    return response.data;
   }
 }
 
