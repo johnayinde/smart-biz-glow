@@ -4,6 +4,21 @@ import { apiService } from "./api";
 // ===== Types matching backend schema =====
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
 
+export interface BulkDeleteResponse {
+  deletedCount: number;
+  failedIds: string[];
+}
+
+export interface BulkUpdateResponse {
+  modifiedCount: number;
+  failedIds: string[];
+}
+
+export interface BulkSendResponse {
+  sentCount: number;
+  failedIds: string[];
+}
+
 export interface InvoiceItem {
   description: string;
   quantity: number;
@@ -160,6 +175,33 @@ class InvoiceService {
 
   async sendInvoice(id: string) {
     return apiService.post<Invoice>(`/invoices/${id}/send`, {});
+  }
+
+  async bulkDelete(ids: string[]): Promise<BulkDeleteResponse> {
+    const response = await apiService.post<BulkDeleteResponse>(
+      "/invoices/bulk/delete",
+      { ids }
+    );
+    return response.data;
+  }
+
+  async bulkUpdateStatus(
+    ids: string[],
+    status: InvoiceStatus
+  ): Promise<BulkUpdateResponse> {
+    const response = await apiService.post<BulkUpdateResponse>(
+      "/invoices/bulk/update-status",
+      { ids, status }
+    );
+    return response.data;
+  }
+
+  async bulkSend(ids: string[]): Promise<BulkSendResponse> {
+    const response = await apiService.post<BulkSendResponse>(
+      "/invoices/bulk/send",
+      { ids }
+    );
+    return response.data;
   }
 
   async downloadInvoice(id: string): Promise<void> {
