@@ -12,6 +12,9 @@ import {
   CreditCard,
   TrendingUp,
   AlertCircle,
+  Check,
+  Trash2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +64,14 @@ import {
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { ExportButton } from "@/components/common/ExportButton";
+import { ExportFilters, analyticsService } from "@/services/analyticsService";
+import { BulkAction, BulkActionsBar } from "@/components/common/BulkActionsBar";
+import {
+  AdvancedFilters,
+  AdvancedFilterValues,
+} from "@/components/common/AdvancedFilters";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const statusColors = {
   pending: "secondary",
@@ -81,6 +92,7 @@ const paymentMethodLabels = {
   credit_card: "Credit Card",
   cash: "Cash",
   check: "Check",
+  stripe: "Stripe",
   paypal: "PayPal",
   other: "Other",
 };
@@ -95,6 +107,11 @@ export default function Payments() {
   const [methodFilter, setMethodFilter] = useState<PaymentMethod | "all">(
     "all"
   );
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterValues>(
+    {}
+  );
+
   const [page, setPage] = useState(1);
   const [recordDialogOpen, setRecordDialogOpen] = useState(false);
 
@@ -107,13 +124,17 @@ export default function Payments() {
     error: paymentsError,
     refetch,
   } = useQuery({
-    queryKey: ["payments", page, statusFilter, methodFilter],
+    queryKey: ["payments", page, statusFilter, methodFilter, advancedFilters],
     queryFn: () =>
       paymentService.getPayments({
         page,
         limit: 10,
         status: statusFilter !== "all" ? statusFilter : undefined,
-        method: methodFilter !== "all" ? methodFilter : undefined,
+        paymentMethod: methodFilter !== "all" ? methodFilter : undefined,
+        startDate: advancedFilters.startDate,
+        endDate: advancedFilters.endDate,
+        sortBy: advancedFilters.sortBy || "paymentDate",
+        sortOrder: advancedFilters.sortOrder || "desc",
       }),
     placeholderData: keepPreviousData,
   });
@@ -121,7 +142,7 @@ export default function Payments() {
   // Fetch payment stats
   const { data: statsData, isLoading: statsLoading } = usePaymentStatsQuery();
 
-  const payments = paymentsData?.payments || [];
+  const payments = paymentsData?.data || [];
   const totalPages = paymentsData?.meta?.totalPages || 1;
   const stats = statsData?.data || {
     totalRevenue: 0,
@@ -135,7 +156,7 @@ export default function Payments() {
     createPaymentMutation.mutate({
       invoiceId: data.invoiceId,
       amount: parseFloat(data.amount),
-      method: data.method,
+      paymentMethod: data.method,
       paymentDate: data.paymentDate.toISOString(),
       reference: data.reference || undefined,
       notes: data.notes || undefined,
@@ -149,7 +170,7 @@ export default function Payments() {
 
   const handleDownloadReceipt = (paymentId: string) => {
     toast({
-      title: "Coming soon",
+      title: "success",
       description: "Receipt download will be available soon.",
     });
   };
@@ -163,6 +184,112 @@ export default function Payments() {
     setMethodFilter(value as PaymentMethod | "all");
     setPage(1);
   };
+
+  const handleExport = async (filters: ExportFilters) => {
+    try {
+      await analyticsService.exportData("payments", filters);
+    } catch (error) {
+      console.error("Export failed:", error);
+      throw error;
+    }
+  };
+
+  // ADD selection handlers:
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(payments.map((payment) => payment.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds([...selectedIds, id]);
+    } else {
+      setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
+    }
+  };
+
+  const isAllSelected =
+    payments.length > 0 && selectedIds.length === payments.length;
+
+  // ADD bulk operation handlers:
+  const handleBulkDelete = async (ids: string[]) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${ids.length} payment(s)?`
+      )
+    ) {
+      try {
+        const result = await paymentService.bulkDelete(ids);
+        toast({
+          title: "Success",
+          description: `Deleted ${result.deletedCount} payment(s)`,
+        });
+        setSelectedIds([]);
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete payments",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleBulkUpdateStatus = async (
+    ids: string[],
+    status: PaymentStatus
+  ) => {
+    if (
+      window.confirm(
+        `Are you sure you want to update ${ids.length} payment(s)?`
+      )
+    ) {
+      try {
+        const result = await paymentService.bulkUpdateStatus(ids, status);
+        toast({
+          title: "Success",
+          description: `Updated ${result.modifiedCount} payment(s)`,
+        });
+        setSelectedIds([]);
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update payments",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // DEFINE bulk actions:
+  const bulkActions: BulkAction[] = [
+    {
+      id: "mark-completed",
+      label: "Mark Completed",
+      icon: <Check className="mr-2 h-4 w-4" />,
+      variant: "default",
+      onClick: (ids) => handleBulkUpdateStatus(ids, "completed"),
+    },
+    {
+      id: "mark-failed",
+      label: "Mark Failed",
+      icon: <X className="mr-2 h-4 w-4" />,
+      variant: "outline",
+      onClick: (ids) => handleBulkUpdateStatus(ids, "failed"),
+    },
+    {
+      id: "delete",
+      label: "Delete",
+      icon: <Trash2 className="mr-2 h-4 w-4" />,
+      variant: "destructive",
+      onClick: handleBulkDelete,
+    },
+  ];
 
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -193,10 +320,17 @@ export default function Payments() {
             Track and manage all payments received
           </p>
         </div>
-        <Button onClick={() => setRecordDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Record Payment
-        </Button>
+        <div className="flex gap-2">
+          <ExportButton
+            type="payments"
+            onExport={handleExport}
+            variant="outline"
+          />
+          <Button onClick={() => setRecordDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Record Payment
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -276,7 +410,13 @@ export default function Payments() {
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={handleStatusFilter}>
+            {/* Status Filter */}
+            <Select
+              value={statusFilter}
+              onValueChange={(value) =>
+                setStatusFilter(value as PaymentStatus | "all")
+              }
+            >
               <SelectTrigger className="w-[180px]">
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Status" />
@@ -289,7 +429,14 @@ export default function Payments() {
                 <SelectItem value="refunded">Refunded</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={methodFilter} onValueChange={handleMethodFilter}>
+
+            {/* Method Filter */}
+            <Select
+              value={methodFilter}
+              onValueChange={(value) =>
+                setMethodFilter(value as PaymentMethod | "all")
+              }
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Method" />
               </SelectTrigger>
@@ -303,6 +450,24 @@ export default function Payments() {
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Advanced Filters */}
+            <AdvancedFilters
+              onApply={setAdvancedFilters}
+              onClear={() => setAdvancedFilters({})}
+              currentFilters={advancedFilters}
+              filterOptions={{
+                showDateRange: true,
+                showAmountRange: true,
+                showSort: true,
+                sortOptions: [
+                  { value: "paymentDate", label: "Payment Date" },
+                  { value: "amount", label: "Amount" },
+                  { value: "status", label: "Status" },
+                ],
+              }}
+            />
+
             <Button variant="outline" onClick={() => refetch()}>
               Refresh
             </Button>
@@ -337,6 +502,13 @@ export default function Payments() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={isAllSelected}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Invoice</TableHead>
                       <TableHead>Method</TableHead>
@@ -348,33 +520,43 @@ export default function Payments() {
                   </TableHeader>
                   <TableBody>
                     {payments.map((payment) => (
-                      <TableRow key={payment._id}>
+                      <TableRow key={payment.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.includes(payment.id)}
+                            onCheckedChange={(checked) =>
+                              handleSelectOne(payment.id, checked as boolean)
+                            }
+                          />
+                        </TableCell>
                         <TableCell>
                           {format(new Date(payment.paymentDate), "MMM d, yyyy")}
                         </TableCell>
                         <TableCell>
-                          {payment.invoice ? (
+                          {payment.invoiceId ? (
                             <button
                               onClick={() =>
                                 handleViewInvoice(payment.invoiceId)
                               }
                               className="hover:underline text-left font-medium"
                             >
-                              {payment.invoice.invoiceNumber}
+                              {payment.invoiceId?.invoiceNumber}
                             </button>
                           ) : (
                             <span className="text-muted-foreground">
-                              {payment.invoiceId.slice(0, 8)}...
+                              {typeof payment.invoiceId === "string"
+                                ? payment.invoiceId.slice(0, 8)
+                                : "N/A"}
                             </span>
                           )}
                         </TableCell>
                         <TableCell>
-                          {paymentMethodLabels[payment.method]}
+                          {paymentMethodLabels[payment.paymentMethod]}
                         </TableCell>
                         <TableCell>
-                          {payment.reference ? (
+                          {payment.stripePaymentIntentId ? (
                             <span className="font-mono text-sm">
-                              {payment.reference}
+                              {payment.stripePaymentIntentId}
                             </span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
@@ -401,7 +583,7 @@ export default function Payments() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() =>
-                                  handleViewInvoice(payment.invoiceId)
+                                  handleViewInvoice(payment.invoiceId.id)
                                 }
                               >
                                 <Eye className="mr-2 h-4 w-4" />
@@ -409,7 +591,7 @@ export default function Payments() {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
-                                  handleDownloadReceipt(payment._id)
+                                  handleDownloadReceipt(payment.id)
                                 }
                               >
                                 <Download className="mr-2 h-4 w-4" />
@@ -461,6 +643,13 @@ export default function Payments() {
         onOpenChange={setRecordDialogOpen}
         onSubmit={handleRecordPayment}
         isSubmitting={createPaymentMutation.isPending}
+      />
+      <BulkActionsBar
+        selectedCount={selectedIds.length}
+        totalCount={payments.length}
+        onClearSelection={() => setSelectedIds([])}
+        actions={bulkActions}
+        selectedIds={selectedIds}
       />
     </div>
   );

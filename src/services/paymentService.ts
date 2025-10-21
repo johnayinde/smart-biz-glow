@@ -1,5 +1,6 @@
 // src/services/paymentService.ts
 import { apiService } from "./api";
+import { BulkDeleteResponse, BulkUpdateResponse } from "./invoiceService";
 
 export type PaymentMethod =
   | "bank_transfer"
@@ -13,13 +14,15 @@ export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
 
 export interface Payment {
   _id: string;
+  id: string;
   userId: string;
-  invoiceId: string;
+  invoiceId: any;
   amount: number;
   currency: string;
   paymentMethod: PaymentMethod;
   status: PaymentStatus;
-  reference?: string;
+  stripePaymentIntentId?: string;
+  transactionId?: string;
   notes?: string;
   paymentDate: string;
   createdAt: string;
@@ -131,6 +134,25 @@ class PaymentService {
 
   async getPaymentsByInvoice(invoiceId: string) {
     return this.getPayments({ invoiceId, limit: 100 });
+  }
+
+  async bulkDelete(ids: string[]): Promise<BulkDeleteResponse> {
+    const response = await apiService.post<BulkDeleteResponse>(
+      "/payments/bulk/delete",
+      { ids }
+    );
+    return response.data;
+  }
+
+  async bulkUpdateStatus(
+    ids: string[],
+    status: PaymentStatus
+  ): Promise<BulkUpdateResponse> {
+    const response = await apiService.post<BulkUpdateResponse>(
+      "/payments/bulk/update-status",
+      { ids, status }
+    );
+    return response.data;
   }
 
   // async getPaymentStats(): Promise<{ data: PaymentStats }> {
