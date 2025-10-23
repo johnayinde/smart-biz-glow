@@ -22,7 +22,7 @@ export function MainLayout() {
       "/settings": "Settings",
       "/notifications": "Notifications",
       "/subscription": "Subscription",
-      "/invoice-templates": "Invoice Templates",
+      "/templates": "Invoice Templates",
     };
 
     // Check if it's a detail page (contains ID)

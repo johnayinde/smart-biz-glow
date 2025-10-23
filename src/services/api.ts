@@ -7,14 +7,14 @@ import axios, {
 } from "axios";
 
 const SERVICE_URLS = {
-  auth: import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:4001",
-  client: import.meta.env.VITE_CLIENT_SERVICE_URL || "http://localhost:4004",
-  invoice: import.meta.env.VITE_INVOICE_SERVICE_URL || "http://localhost:4003",
-  payment: import.meta.env.VITE_PAYMENT_SERVICE_URL || "http://localhost:4005",
-  reminder:
-    import.meta.env.VITE_REMINDER_SERVICE_URL || "http://localhost:4006",
-  analytics:
-    import.meta.env.VITE_ANALYTICS_SERVICE_URL || "http://localhost:4008",
+  auth: import.meta.env.VITE_AUTH_SERVICE_URL,
+  client: import.meta.env.VITE_CLIENT_SERVICE_URL,
+  invoice: import.meta.env.VITE_INVOICE_SERVICE_URL,
+  template: import.meta.env.VITE_TEMPLATE_SERVICE_URL,
+  reminder: import.meta.env.VITE_REMINDER_SERVICE_URL,
+  payment: import.meta.env.VITE_PAYMENT_SERVICE_URL,
+  notification: import.meta.env.VITE_NOTIFICATION_SERVICE_URL,
+  analytics: import.meta.env.VITE_ANALYTICS_SERVICE_URL,
 };
 
 function getServiceUrl(path: string): string {
@@ -26,6 +26,8 @@ function getServiceUrl(path: string): string {
   if (cleanPath.startsWith("payment")) return SERVICE_URLS.payment;
   if (cleanPath.startsWith("reminder")) return SERVICE_URLS.reminder;
   if (cleanPath.startsWith("analytics")) return SERVICE_URLS.analytics;
+  if (cleanPath.startsWith("notification")) return SERVICE_URLS.notification;
+  if (cleanPath.startsWith("template")) return SERVICE_URLS.template;
 
   return SERVICE_URLS.auth;
 }
