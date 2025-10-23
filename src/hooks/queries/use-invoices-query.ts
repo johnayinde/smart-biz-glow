@@ -2,13 +2,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   invoiceService,
-  Invoice,
   CreateInvoiceData,
   UpdateInvoiceData,
   InvoiceFilters,
 } from "@/services/invoiceService";
 import { useToast } from "@/hooks/use-toast";
-import { string } from "zod";
 
 // Get all invoices
 export const useInvoicesQuery = (filters?: InvoiceFilters) => {
