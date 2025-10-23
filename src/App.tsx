@@ -25,7 +25,7 @@ import PasswordReset from "./pages/auth/PasswordReset";
 // Protected pages
 import Dashboard from "./pages/dashboard";
 import Invoices from "./pages/invoices";
-import InvoiceTemplates from "./pages/invoice-templates";
+import InvoiceTemplates from "./pages/templates";
 import Clients from "./pages/clients/index";
 import ClientDetail from "./pages/clients/client-detail";
 import Payments from "./pages/payments";
@@ -39,6 +39,8 @@ import NotFound from "./pages/not-found";
 import CreateInvoice from "./pages/invoices/new";
 import PaymentCancel from "./pages/payments/cancel";
 import PaymentSuccess from "./pages/payments/success";
+import TemplateBuilder from "./pages/templates/builder";
+import InvoicePreview from "./pages/invoices/preview";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -75,23 +77,40 @@ const App = () => (
                   <Route
                     path="/invoices/edit/:id"
                     element={<CreateInvoice />}
-                  />{" "}
-                  {/* Add this */}
-                  <Route
-                    path="/invoice-templates"
-                    element={<InvoiceTemplates />}
                   />
+                  //
+                  <Route path="/invoices/create" element={<CreateInvoice />} />
+                  <Route
+                    path="/invoices/edit/:id"
+                    element={<CreateInvoice />}
+                  />
+                  <Route
+                    path="/invoices/preview/:id"
+                    element={<InvoicePreview />}
+                  />
+                  //
+                  {/* Add this */}
+                  <Route path="/templates" element={<InvoiceTemplates />} />'
+                  <Route
+                    path="/templates/builder"
+                    element={<TemplateBuilder />}
+                  />
+                  <Route
+                    path="/templates/builder/:id"
+                    element={<TemplateBuilder />}
+                  />
+                  '
                   <Route path="/payments" element={<Payments />} />
                   <Route
                     path="/payments/success"
                     element={<PaymentSuccess />}
                   />
                   <Route path="/payments/cancel" element={<PaymentCancel />} />
+                  <Route path="/notifications" element={<Notifications />} />
                   {/*
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/insights" element={<Insights />} />
                   <Route path="/settings" element={<Settings />} />
-                  <Route path="/notifications" element={<Notifications />} />
                   <Route path="/subscription" element={<Subscription />} /> */}
                 </Route>
               </Route>
