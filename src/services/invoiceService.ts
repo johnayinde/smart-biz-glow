@@ -46,6 +46,10 @@ export interface Invoice {
   id: string;
   userId: string;
   clientId: string;
+  templateId?: string;
+  clientAddress?: string;
+  invoiceDate: string;
+
   invoiceNumber: string;
   status: InvoiceStatus;
   items: InvoiceItem[];
@@ -75,15 +79,20 @@ export interface Invoice {
     email: string;
     company?: string;
   };
+
+  //
+
+  clientName: string;
+  clientEmail: string;
 }
 
 export interface CreateInvoiceData {
-  clientId: string;
+  clientId?: string;
   items: InvoiceItem[];
   tax?: number;
   discount?: number;
   currency?: string;
-  issueDate: string;
+  issueDate?: string;
   dueDate: string;
   notes?: string;
   terms?: string;
@@ -91,6 +100,19 @@ export interface CreateInvoiceData {
     enabled?: boolean;
     sequenceType?: "default" | "aggressive" | "gentle";
   };
+
+  //
+
+  templateId?: string;
+  // clientName: string;
+  // clientEmail: string;
+  // clientAddress?: string;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  subtotal: number;
+  total: number;
+  //
+  status?: InvoiceStatus;
 }
 
 export interface UpdateInvoiceData extends Partial<CreateInvoiceData> {
@@ -175,6 +197,16 @@ class InvoiceService {
 
   async sendInvoice(id: string) {
     return apiService.post<Invoice>(`/invoices/${id}/send`, {});
+  }
+
+  // async sendEmail(id: string) {
+  //   return apiService.post<Invoice>(`/invoices/${id}/send`, {});
+  // }
+
+  async downloadPDF(id: string) {
+    return apiService.post<Invoice>(`/invoices/${id}/pdf`, {
+      responseType: "blob",
+    });
   }
 
   async bulkDelete(ids: string[]): Promise<BulkDeleteResponse> {
