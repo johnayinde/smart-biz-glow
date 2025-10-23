@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, Plus, LogOut, Settings, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationBell } from "./NotificationBell";
 
 interface NavbarProps {
   title?: string;
@@ -41,14 +42,16 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
         <h1 className="text-lg font-semibold">{title}</h1>
 
         {/* Right Side Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {/* Notifications */}
-          <Button asChild variant="ghost" size="icon">
+          {/* <Button asChild variant="ghost" size="icon">
             <Link to="/notifications">
               <Bell className="h-[1.2rem] w-[1.2rem]" />
               <span className="sr-only">Notifications</span>
             </Link>
-          </Button>
+          </Button> */}
+
+          <NotificationBell />
 
           {/* New Invoice Button */}
           <Button
