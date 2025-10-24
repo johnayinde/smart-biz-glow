@@ -90,11 +90,12 @@ export function ColorPicker({ colors, onChange }: ColorPickerProps) {
                   />
                   <div
                     className="w-3 h-3 rounded"
-                    style={{ backgroundColor: preset.colors.secondary }}
+                    style={{ backgroundColor: preset.colors.textSecondary }}
                   />
+
                   <div
                     className="w-3 h-3 rounded"
-                    style={{ backgroundColor: preset.colors.accent }}
+                    style={{ backgroundColor: preset.colors.text }}
                   />
                 </div>
                 <span className="text-xs truncate">{preset.name}</span>{" "}
@@ -111,7 +112,7 @@ export function ColorPicker({ colors, onChange }: ColorPickerProps) {
           color={colors.primary}
           onChange={(primary) => onChange({ ...colors, primary })}
         />
-        <ColorInput
+        {/* <ColorInput
           label="Secondary Color"
           color={colors.secondary}
           onChange={(secondary) => onChange({ ...colors, secondary })}
@@ -120,7 +121,7 @@ export function ColorPicker({ colors, onChange }: ColorPickerProps) {
           label="Accent Color"
           color={colors.accent}
           onChange={(accent) => onChange({ ...colors, accent })}
-        />
+        /> */}
         <ColorInput
           label="Text Color"
           color={colors.text}

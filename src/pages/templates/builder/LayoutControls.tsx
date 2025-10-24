@@ -6,9 +6,11 @@ interface LayoutControlsProps {
   layout: "classic" | "modern" | "minimal" | "creative";
   paperSize: "A4" | "Letter" | "Legal";
   orientation: "portrait" | "landscape";
-  onLayoutChange: (layout: string) => void;
-  onPaperSizeChange: (size: string) => void;
-  onOrientationChange: (orientation: string) => void;
+  onLayoutChange: (
+    layout: "classic" | "modern" | "minimal" | "creative"
+  ) => void;
+  onPaperSizeChange: (size: "A4" | "Letter" | "Legal") => void;
+  onOrientationChange: (orientation: "portrait" | "landscape") => void;
 }
 
 export function LayoutControls({

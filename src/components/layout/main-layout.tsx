@@ -58,7 +58,7 @@ export function MainLayout() {
         {/* Page Content */}
         <main className="flex-1 overflow-auto">
           <div className="p-4 md:p-6">
-            <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-full">
               <Outlet />
             </div>
           </div>

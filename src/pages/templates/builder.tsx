@@ -1,4 +1,4 @@
-// src/pages/templates/builder.tsx - FIXED VERSION
+// src/pages/templates/builder.tsx - COMPLETE FIX WITH DEEP MERGE
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -39,8 +39,8 @@ import { LivePreview } from "./builder/LivePreview";
 import { TemplateInfoSection } from "./builder/TemplateInfoSection";
 
 const defaultDesign: DesignConfig = {
-  layout: "classic", // Changed from object
-  paperSize: "A4", // Changed from layout.pageSize
+  layout: "classic",
+  paperSize: "A4",
   orientation: "portrait",
   logo: {
     url: "",
@@ -58,7 +58,6 @@ const defaultDesign: DesignConfig = {
     border: "#e0e0e0",
   },
   fonts: {
-    // Changed from typography
     heading: "Inter",
     body: "Inter",
     size: {
@@ -75,7 +74,6 @@ const defaultDesign: DesignConfig = {
       order: 1,
     },
     invoiceInfo: {
-      // Added (was missing)
       enabled: true,
       fields: ["invoiceNumber", "invoiceDate", "dueDate"],
       order: 2,
@@ -100,15 +98,13 @@ const defaultDesign: DesignConfig = {
       fields: ["notes", "terms", "paymentInfo"],
       order: 6,
     },
-    // Removed notes section
   },
   spacing: {
-    sectionGap: 32, // Changed from 24
-    elementGap: 16, // Added (was itemGap)
+    sectionGap: 32,
+    elementGap: 16,
     padding: 48,
   },
   advanced: {
-    // Changed from borders
     showBorders: true,
     borderStyle: "solid",
     showWatermark: false,
@@ -119,7 +115,7 @@ const defaultDesign: DesignConfig = {
 };
 
 const templateSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, "Template name is required"),
   description: z.string().optional(),
   design: z.any(),
   defaults: z
@@ -149,7 +145,6 @@ export default function TemplateBuilder() {
 
   const { data: existingTemplate, isLoading: loadingTemplate } =
     useTemplate(id);
-
   const createMutation = useCreateTemplate();
   const updateMutation = useUpdateTemplate();
 
@@ -180,24 +175,6 @@ export default function TemplateBuilder() {
   const templateName = watch("name");
   const templateDefaults = watch("defaults");
 
-  // Block navigation if there are unsaved changes
-  // const blocker = useBlocker(
-  //   ({ currentLocation, nextLocation }) =>
-  //     isDirty && !isSaving && currentLocation.pathname !== nextLocation.pathname
-  // );
-
-  // Warn before leaving with unsaved changes
-  // useEffect(() => {
-  //   const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-  //     if (isDirty && !isSaving) {
-  //       e.preventDefault();
-  //     }
-  //   };
-
-  //   window.addEventListener("beforeunload", handleBeforeUnload);
-  //   return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  // }, [isDirty, isSaving]);
-
   useEffect(() => {
     if (existingTemplate?.data) {
       reset({
@@ -211,19 +188,88 @@ export default function TemplateBuilder() {
     }
   }, [existingTemplate, reset]);
 
+  // FIXED: Deep merge for nested design updates
   const handleDesignChange = (updates: Partial<DesignConfig>) => {
-    setValue("design", { ...design, ...updates }, { shouldDirty: true });
+    // Create a properly deep-merged design object
+    const updatedDesign: DesignConfig = {
+      // Start with current design
+      ...design,
+      // Spread top-level updates
+      ...updates,
+
+      // Deep merge colors if provided
+      colors: updates.colors
+        ? { ...design.colors, ...updates.colors }
+        : design.colors,
+
+      // Deep merge fonts (including nested size object)
+      fonts: updates.fonts
+        ? {
+            ...design.fonts,
+            ...updates.fonts,
+            // Ensure font sizes are also merged
+            size: updates.fonts.size
+              ? { ...design.fonts.size, ...updates.fonts.size }
+              : design.fonts.size,
+          }
+        : design.fonts,
+
+      // Deep merge logo
+      logo: updates.logo ? { ...design.logo, ...updates.logo } : design.logo,
+
+      // Deep merge sections
+      sections: updates.sections
+        ? {
+            ...design.sections,
+            ...updates.sections,
+            // Also merge each section if only partial updates
+            header: updates.sections.header
+              ? { ...design.sections.header, ...updates.sections.header }
+              : design.sections.header,
+            invoiceInfo: updates.sections.invoiceInfo
+              ? {
+                  ...design.sections.invoiceInfo,
+                  ...updates.sections.invoiceInfo,
+                }
+              : design.sections.invoiceInfo,
+            billTo: updates.sections.billTo
+              ? { ...design.sections.billTo, ...updates.sections.billTo }
+              : design.sections.billTo,
+            items: updates.sections.items
+              ? { ...design.sections.items, ...updates.sections.items }
+              : design.sections.items,
+            summary: updates.sections.summary
+              ? { ...design.sections.summary, ...updates.sections.summary }
+              : design.sections.summary,
+            footer: updates.sections.footer
+              ? { ...design.sections.footer, ...updates.sections.footer }
+              : design.sections.footer,
+          }
+        : design.sections,
+
+      // Deep merge spacing
+      spacing: updates.spacing
+        ? { ...design.spacing, ...updates.spacing }
+        : design.spacing,
+
+      // Deep merge advanced options
+      advanced: updates.advanced
+        ? { ...design.advanced, ...updates.advanced }
+        : design.advanced,
+    };
+
+    // Debug logging (remove in production)
+
+    setValue("design", updatedDesign, { shouldDirty: true });
   };
 
   const onSubmit = async (data: TemplateFormData) => {
     try {
-      console.log(data);
       setIsSaving(true);
 
-      // Validate required fields
       if (!data.name || data.name.trim() === "") {
         toast({
-          title: "error",
+          title: "Error",
           description: "Template name is required",
           variant: "destructive",
         });
@@ -245,7 +291,7 @@ export default function TemplateBuilder() {
         });
 
         toast({
-          title: "success",
+          title: "Success",
           description: `"${data.name}" has been updated successfully`,
         });
       } else {
@@ -259,16 +305,13 @@ export default function TemplateBuilder() {
         });
 
         toast({
-          title: "success",
+          title: "Success",
           description: `"${data.name}" has been created successfully`,
         });
       }
 
-      // Reset form dirty state before navigation
       reset(data, { keepValues: true });
       setIsSaving(false);
-
-      // Navigate after successful save
       navigate("/templates");
     } catch (error: any) {
       console.error("Template save error:", error);
@@ -299,7 +342,6 @@ export default function TemplateBuilder() {
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 150));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
 
-  // Loading state
   if (loadingTemplate) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -319,6 +361,7 @@ export default function TemplateBuilder() {
   return (
     <>
       <div className="h-screen flex flex-col bg-background">
+        {/* Header */}
         <div className="border-b bg-card">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-4">
@@ -329,12 +372,17 @@ export default function TemplateBuilder() {
                 <h1 className="text-xl font-semibold">
                   {isEditMode ? "Edit Template" : "Create Template"}
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-lg text-muted-foreground">
                   {templateName || "Untitled Template"}
                   {isDirty && (
                     <span className="text-orange-500 ml-2">
                       • Unsaved changes
                     </span>
+                  )}
+                  {errors.name && (
+                    <p className="text-lg text-destructive">
+                      {errors.name.message as string}
+                    </p>
                   )}
                 </p>
               </div>
@@ -369,13 +417,13 @@ export default function TemplateBuilder() {
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Form & Design Controls */}
-          <div className="w-96 border-r bg-card flex flex-col">
+        <div className="flex-1 flex overflow-auto">
+          {/* Left Panel */}
+          <div className="w-96 border-r bg-card flex flex-col min-h-0">
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col min-h-0"
             >
               <TabsList className="w-full rounded-none border-b">
                 <TabsTrigger value="info" className="flex-1">
@@ -386,7 +434,7 @@ export default function TemplateBuilder() {
                 </TabsTrigger>
               </TabsList>
 
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 h-full">
                 <TabsContent value="info" className="p-6 mt-0">
                   <TemplateInfoSection
                     register={register}
@@ -426,10 +474,9 @@ export default function TemplateBuilder() {
                   </Button>
                   <Separator orientation="vertical" className="h-6 mx-2" />
                   <span className="text-sm text-muted-foreground">
-                    {viewMode === "desktop" ? "Desktop" : "Mobile"} Preview
+                    {viewMode === "desktop" ? "Desktop View" : "Mobile View"}
                   </span>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
@@ -439,7 +486,7 @@ export default function TemplateBuilder() {
                   >
                     <ZoomOut className="h-4 w-4" />
                   </Button>
-                  <span className="text-sm text-muted-foreground min-w-[3rem] text-center">
+                  <span className="text-sm text-muted-foreground w-12 text-center">
                     {zoom}%
                   </span>
                   <Button
@@ -455,21 +502,19 @@ export default function TemplateBuilder() {
             </div>
 
             <ScrollArea className="flex-1">
-              <div className="p-8 flex justify-center">
-                <div
-                  style={{
-                    transform: `scale(${zoom / 100})`,
-                    transformOrigin: "top center",
-                  }}
-                  className="transition-transform"
-                >
-                  <LivePreview
-                    design={design}
-                    viewMode={viewMode}
-                    templateName={templateName}
-                    defaults={templateDefaults}
-                  />
-                </div>
+              <div
+                className="p-8 flex justify-center items-start min-h-full"
+                style={{
+                  transform: `scale(${zoom / 100})`,
+                  transformOrigin: "top center",
+                }}
+              >
+                <LivePreview
+                  design={design}
+                  viewMode={viewMode}
+                  templateName={templateName}
+                  defaults={templateDefaults}
+                />
               </div>
             </ScrollArea>
           </div>
@@ -480,18 +525,15 @@ export default function TemplateBuilder() {
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Are you sure you want to leave? All your
+              You have unsaved changes. Are you sure you want to leave? All
               changes will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Continue Editing</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmCancel}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleConfirmCancel}>
               Discard Changes
             </AlertDialogAction>
           </AlertDialogFooter>

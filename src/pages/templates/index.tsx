@@ -133,7 +133,7 @@ export default function TemplatesPage() {
   const totalPages = data?.meta.totalPages || 1;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className=" mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

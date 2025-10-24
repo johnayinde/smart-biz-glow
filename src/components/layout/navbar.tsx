@@ -36,7 +36,7 @@ export function Navbar({ title = "Dashboard" }: NavbarProps) {
   };
 
   return (
-    <header className=" mx-auto max-w-7xl sticky top-0 z-10 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className=" mx-auto max-w-full sticky top-0 z-10 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className=" flex h-14 items-center justify-between">
         {/* Title */}
         <h1 className="text-lg font-semibold">{title}</h1>

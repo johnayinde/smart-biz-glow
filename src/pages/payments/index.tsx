@@ -311,7 +311,7 @@ export default function Payments() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className=" mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

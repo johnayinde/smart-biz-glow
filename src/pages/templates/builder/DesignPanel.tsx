@@ -1,4 +1,4 @@
-// src/components/templates/builder/DesignPanel.tsx
+// src/pages/templates/builder/DesignPanel.tsx
 import { DesignConfig } from "@/services/templateService";
 import {
   Accordion,
@@ -26,6 +26,7 @@ export function DesignPanel({ design, onChange }: DesignPanelProps) {
       defaultValue={["colors", "typography", "layout"]}
       className="w-full"
     >
+      {/* Colors Section */}
       <AccordionItem value="colors">
         <AccordionTrigger className="text-base font-semibold">
           🎨 Colors
@@ -38,6 +39,7 @@ export function DesignPanel({ design, onChange }: DesignPanelProps) {
         </AccordionContent>
       </AccordionItem>
 
+      {/* Typography Section */}
       <AccordionItem value="typography">
         <AccordionTrigger className="text-base font-semibold">
           ✍️ Typography
@@ -45,11 +47,12 @@ export function DesignPanel({ design, onChange }: DesignPanelProps) {
         <AccordionContent>
           <FontSelector
             typography={design.fonts}
-            onChange={(typography) => onChange({ fonts: typography })}
+            onChange={(fonts) => onChange({ fonts })}
           />
         </AccordionContent>
       </AccordionItem>
 
+      {/* Logo Section */}
       <AccordionItem value="logo">
         <AccordionTrigger className="text-base font-semibold">
           🏢 Logo
@@ -62,28 +65,24 @@ export function DesignPanel({ design, onChange }: DesignPanelProps) {
         </AccordionContent>
       </AccordionItem>
 
+      {/* Layout Section */}
       <AccordionItem value="layout">
         <AccordionTrigger className="text-base font-semibold">
           📐 Layout
         </AccordionTrigger>
         <AccordionContent>
           <LayoutControls
-            layout={design.layout as any}
+            layout={design.layout}
             paperSize={design.paperSize}
             orientation={design.orientation}
-            onLayoutChange={(
-              layout: "classic" | "modern" | "minimal" | "creative"
-            ) => onChange({ layout })}
-            onPaperSizeChange={(paperSize: "A4" | "Letter" | "Legal") =>
-              onChange({ paperSize })
-            }
-            onOrientationChange={(orientation: "portrait" | "landscape") =>
-              onChange({ orientation })
-            }
+            onLayoutChange={(layout) => onChange({ layout })}
+            onPaperSizeChange={(paperSize) => onChange({ paperSize })}
+            onOrientationChange={(orientation) => onChange({ orientation })}
           />
         </AccordionContent>
       </AccordionItem>
 
+      {/* Sections Management */}
       <AccordionItem value="sections">
         <AccordionTrigger className="text-base font-semibold">
           📋 Sections
@@ -96,6 +95,7 @@ export function DesignPanel({ design, onChange }: DesignPanelProps) {
         </AccordionContent>
       </AccordionItem>
 
+      {/* Spacing Controls */}
       <AccordionItem value="spacing">
         <AccordionTrigger className="text-base font-semibold">
           📏 Spacing
@@ -108,31 +108,15 @@ export function DesignPanel({ design, onChange }: DesignPanelProps) {
         </AccordionContent>
       </AccordionItem>
 
-      <AccordionItem value="borders">
+      {/* Advanced Options (Borders, Watermark, etc.) */}
+      <AccordionItem value="advanced">
         <AccordionTrigger className="text-base font-semibold">
-          ➖ Borders
+          ⚙️ Advanced Options
         </AccordionTrigger>
         <AccordionContent>
           <BorderControls
             advanced={design.advanced}
-            borders={{
-              enabled: design.advanced.showBorders,
-              width: 1, // Default width, adjust as needed
-              style:
-                design.advanced.borderStyle === "none"
-                  ? "solid"
-                  : design.advanced.borderStyle,
-              color: "#000000", // Default color, adjust as needed
-            }}
-            onChange={(borders) =>
-              onChange({
-                advanced: {
-                  ...design.advanced,
-                  showBorders: borders.enabled,
-                  borderStyle: borders.style,
-                },
-              })
-            }
+            onChange={(advanced) => onChange({ advanced })}
           />
         </AccordionContent>
       </AccordionItem>

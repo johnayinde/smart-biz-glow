@@ -68,7 +68,7 @@ export function LivePreview({
                   marginBottom: "8px",
                 }}
               >
-                🏢 {templateName}
+                🏢
               </div>
             )}
             <div

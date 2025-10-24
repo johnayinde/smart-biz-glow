@@ -1,49 +1,20 @@
-// src/components/templates/builder/SpacingControls.tsx
+// src/pages/templates/builder/SpacingControls.tsx
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-
-// interface SpacingControlsProps {
-//   spacing: {
-//     lineHeight: number;
-//     elementGap: number;
-
-//     sectionGap: number;
-//     padding: number;
-//   };
-//   onChange: (spacing: any) => void;
-// }
 
 interface SpacingControlsProps {
   spacing: {
     sectionGap: number;
-    elementGap: number; // was itemGap
-    padding: number; // NEW
+    elementGap: number;
+    padding: number;
   };
-  onChange: (spacing: any) => void;
+  onChange: (spacing: SpacingControlsProps["spacing"]) => void;
 }
 
 export function SpacingControls({ spacing, onChange }: SpacingControlsProps) {
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Line Height</Label>
-          {/* <span className="text-sm text-muted-foreground">
-            {spacing.lineHeight || ""}
-          </span> */}
-        </div>
-        <Slider
-          // value={[spacing.lineHeight]}
-          onValueChange={([lineHeight]) => onChange({ ...spacing, lineHeight })}
-          min={1}
-          max={2.5}
-          step={0.1}
-        />
-        <p className="text-xs text-muted-foreground">
-          Space between lines of text
-        </p>
-      </div>
-
+      {/* Section Gap */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>Section Gap</Label>
@@ -55,17 +26,18 @@ export function SpacingControls({ spacing, onChange }: SpacingControlsProps) {
           value={[spacing.sectionGap]}
           onValueChange={([sectionGap]) => onChange({ ...spacing, sectionGap })}
           min={8}
-          max={48}
+          max={64}
           step={4}
         />
         <p className="text-xs text-muted-foreground">
-          Space between major sections
+          Space between major sections (header, items, summary)
         </p>
       </div>
 
+      {/* Element Gap */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Item Gap</Label>
+          <Label>Element Gap</Label>
           <span className="text-sm text-muted-foreground">
             {spacing.elementGap}px
           </span>
@@ -74,11 +46,31 @@ export function SpacingControls({ spacing, onChange }: SpacingControlsProps) {
           value={[spacing.elementGap]}
           onValueChange={([elementGap]) => onChange({ ...spacing, elementGap })}
           min={4}
-          max={24}
+          max={32}
           step={2}
         />
         <p className="text-xs text-muted-foreground">
-          Space between line items
+          Space between elements within sections (line items, fields)
+        </p>
+      </div>
+
+      {/* Padding */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>Page Padding</Label>
+          <span className="text-sm text-muted-foreground">
+            {spacing.padding}px
+          </span>
+        </div>
+        <Slider
+          value={[spacing.padding]}
+          onValueChange={([padding]) => onChange({ ...spacing, padding })}
+          min={16}
+          max={80}
+          step={4}
+        />
+        <p className="text-xs text-muted-foreground">
+          Inner padding around the entire invoice content
         </p>
       </div>
     </div>
