@@ -2,11 +2,22 @@
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
+// interface SpacingControlsProps {
+//   spacing: {
+//     lineHeight: number;
+//     elementGap: number;
+
+//     sectionGap: number;
+//     padding: number;
+//   };
+//   onChange: (spacing: any) => void;
+// }
+
 interface SpacingControlsProps {
   spacing: {
-    lineHeight: number;
     sectionGap: number;
-    itemGap: number;
+    elementGap: number; // was itemGap
+    padding: number; // NEW
   };
   onChange: (spacing: any) => void;
 }
@@ -17,12 +28,12 @@ export function SpacingControls({ spacing, onChange }: SpacingControlsProps) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>Line Height</Label>
-          <span className="text-sm text-muted-foreground">
-            {spacing.lineHeight}
-          </span>
+          {/* <span className="text-sm text-muted-foreground">
+            {spacing.lineHeight || ""}
+          </span> */}
         </div>
         <Slider
-          value={[spacing.lineHeight]}
+          // value={[spacing.lineHeight]}
           onValueChange={([lineHeight]) => onChange({ ...spacing, lineHeight })}
           min={1}
           max={2.5}
@@ -56,12 +67,12 @@ export function SpacingControls({ spacing, onChange }: SpacingControlsProps) {
         <div className="flex items-center justify-between">
           <Label>Item Gap</Label>
           <span className="text-sm text-muted-foreground">
-            {spacing.itemGap}px
+            {spacing.elementGap}px
           </span>
         </div>
         <Slider
-          value={[spacing.itemGap]}
-          onValueChange={([itemGap]) => onChange({ ...spacing, itemGap })}
+          value={[spacing.elementGap]}
+          onValueChange={([elementGap]) => onChange({ ...spacing, elementGap })}
           min={4}
           max={24}
           step={2}

@@ -18,6 +18,14 @@ interface BorderControlsProps {
     style: "solid" | "dashed" | "dotted";
     color: string;
   };
+  advanced: {
+    showWatermark: boolean;
+    watermarkText: string;
+    showPageNumbers: boolean;
+    showBorders: boolean;
+    borderStyle: "solid" | "dashed" | "none";
+    roundedCorners: boolean;
+  };
   onChange: (borders: any) => void;
 }
 

@@ -5,6 +5,7 @@ import { Download, Printer, X } from "lucide-react";
 import { useTemplate } from "@/hooks/queries/use-template-query";
 import { LivePreview } from "../templates/builder/LivePreview";
 import { useInvoiceQuery } from "@/hooks/useInvoices";
+import { DesignConfig } from "../../services/templateService";
 
 export default function InvoicePreview() {
   const { id } = useParams();
@@ -17,6 +18,11 @@ export default function InvoicePreview() {
     data: { data: template },
     isLoading: loadingTemplate,
   } = useTemplate(invoice?.templateId);
+
+  const design: DesignConfig = {
+    ...getDefaultDesign(),
+    ...(template?.design as Partial<DesignConfig> | undefined),
+  };
 
   const handleDownload = async () => {
     try {
@@ -79,7 +85,7 @@ export default function InvoicePreview() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center">
           <LivePreview
-            design={template?.design || getDefaultDesign()}
+            design={design}
             viewMode="desktop"
             templateName={template?.name}
             defaults={template?.defaults}
@@ -112,20 +118,46 @@ function getDefaultDesign() {
       size: "medium",
       enabled: false,
     },
-    layout: {
-      pageSize: "A4",
-      orientation: "portrait",
-      margins: { top: 40, right: 40, bottom: 40, left: 40 },
+    layout: "classic" as "classic",
+    // layout: {
+    //   pageSize: "A4",
+    //   orientation: "portrait",
+    //   margins: { top: 40, right: 40, bottom: 40, left: 40 },
+    // },
+    paperSize: "A4" as "A4",
+    orientation: "portrait" as "portrait",
+    fonts: {
+      heading: "Inter",
+      body: "Inter",
+      size: {
+        heading: 24,
+        subheading: 18,
+        body: 14,
+        small: 12,
+      },
     },
+
     sections: {
       header: { enabled: true, fields: [], order: 1 },
       billTo: { enabled: true, fields: [], order: 2 },
       items: { enabled: true, fields: [], order: 3 },
       summary: { enabled: true, fields: [], order: 4 },
       footer: { enabled: true, fields: [], order: 5 },
-      notes: { enabled: true, fields: [], order: 6 },
+      invoiceInfo: { enabled: false, fields: [], order: 6 },
     },
-    spacing: { lineHeight: 1.5, sectionGap: 24, itemGap: 12 },
-    borders: { enabled: true, width: 1, style: "solid", color: "#e0e0e0" },
+    spacing: {
+      sectionGap: 24,
+      elementGap: 12,
+      padding: 40,
+    },
+
+    advanced: {
+      showWatermark: false,
+      watermarkText: "",
+      showPageNumbers: false,
+      showBorders: true,
+      borderStyle: "solid" as "solid",
+      roundedCorners: false,
+    },
   };
 }

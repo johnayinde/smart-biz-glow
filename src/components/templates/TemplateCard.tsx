@@ -39,6 +39,7 @@ interface TemplateCardProps {
   onDuplicate: (template: Template) => void;
   onDelete?: (template: Template) => void;
   onSetDefault?: (template: Template) => void;
+
   isSelected?: boolean;
   onSelect?: (template: Template) => void;
   showActions?: boolean;

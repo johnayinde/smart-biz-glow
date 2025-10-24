@@ -454,13 +454,13 @@ export function TemplatePreviewModal({
                     <div>
                       <span className="text-sm font-medium">Heading Font:</span>{" "}
                       <span className="text-sm text-muted-foreground">
-                        {template.design?.typography?.heading}
+                        {template.design?.fonts?.heading}
                       </span>
                     </div>
                     <div>
                       <span className="text-sm font-medium">Body Font:</span>{" "}
                       <span className="text-sm text-muted-foreground">
-                        {template.design?.typography?.body}
+                        {template.design?.fonts?.body}
                       </span>
                     </div>
                   </div>
@@ -473,15 +473,74 @@ export function TemplatePreviewModal({
                   <h3 className="font-semibold mb-3">Layout</h3>
                   <div className="space-y-2">
                     <div>
-                      <span className="text-sm font-medium">Page Size:</span>{" "}
+                      <span className="text-sm font-medium">Style:</span>{" "}
+                      <span className="text-sm text-muted-foreground capitalize">
+                        {template.design?.layout || "classic"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium">Paper Size:</span>{" "}
                       <span className="text-sm text-muted-foreground">
-                        {template.design.layout?.pageSize}
+                        {template.design?.paperSize || "A4"}
                       </span>
                     </div>
                     <div>
                       <span className="text-sm font-medium">Orientation:</span>{" "}
                       <span className="text-sm text-muted-foreground capitalize">
-                        {template.design.layout.orientation}
+                        {template.design?.orientation || "portrait"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Advanced Options - NEW */}
+                <div>
+                  <h3 className="font-semibold mb-3">Advanced Options</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-sm font-medium">Borders:</span>{" "}
+                      <span className="text-sm text-muted-foreground">
+                        {template.design?.advanced?.showBorders
+                          ? "Enabled"
+                          : "Disabled"}
+                      </span>
+                    </div>
+                    {template.design?.advanced?.showBorders && (
+                      <div>
+                        <span className="text-sm font-medium">
+                          Border Style:
+                        </span>{" "}
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {template.design?.advanced?.borderStyle || "solid"}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-sm font-medium">Watermark:</span>{" "}
+                      <span className="text-sm text-muted-foreground">
+                        {template.design?.advanced?.showWatermark
+                          ? "Enabled"
+                          : "Disabled"}
+                      </span>
+                    </div>
+                    {template.design?.advanced?.showWatermark && (
+                      <div>
+                        <span className="text-sm font-medium">
+                          Watermark Text:
+                        </span>{" "}
+                        <span className="text-sm text-muted-foreground">
+                          {template.design?.advanced?.watermarkText || "DRAFT"}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-sm font-medium">Page Numbers:</span>{" "}
+                      <span className="text-sm text-muted-foreground">
+                        {template.design?.advanced?.showPageNumbers
+                          ? "Enabled"
+                          : "Disabled"}
                       </span>
                     </div>
                   </div>

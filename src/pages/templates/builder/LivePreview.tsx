@@ -1,4 +1,4 @@
-// src/components/templates/builder/LivePreview.tsx
+// src/pages/templates/builder/LivePreview.tsx - FIXED VERSION
 import { DesignConfig, TemplateDefaults } from "@/services/templateService";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,16 @@ export function LivePreview({
   templateName = "Untitled Template",
   defaults,
 }: LivePreviewProps) {
-  const { colors, typography, logo, layout, spacing, borders, sections } =
-    design;
+  const {
+    colors,
+    fonts,
+    logo,
+    paperSize,
+    orientation,
+    spacing,
+    advanced,
+    sections,
+  } = design;
 
   const containerWidth = viewMode === "desktop" ? "210mm" : "100%";
   const maxWidth = viewMode === "mobile" ? "375px" : "210mm";
@@ -34,179 +42,125 @@ export function LivePreview({
       style={{
         width: containerWidth,
         maxWidth,
-        minHeight: layout.orientation === "portrait" ? "297mm" : "210mm",
-        padding: `${layout.margins.top}px ${layout.margins.right}px ${layout.margins.bottom}px ${layout.margins.left}px`,
-        fontFamily: typography.body,
-        fontSize: `${typography.size.body}px`,
+        minHeight: orientation === "portrait" ? "297mm" : "210mm",
+        padding: `${spacing.padding}px`,
+        fontFamily: fonts.body,
         color: colors.text,
-        lineHeight: spacing.lineHeight,
       }}
     >
       {/* Header Section */}
-      {sections.header.enabled && (
-        <div style={{ marginBottom: `${spacing.sectionGap}px` }}>
-          <div
-            className={cn(
-              "flex items-start gap-4",
-              logo.position === "center" && "justify-center text-center",
-              logo.position === "right" && "justify-end text-right"
-            )}
-          >
-            <div className="flex-1">
-              {logo.enabled && logo.url && (
-                <img
-                  src={logo.url}
-                  alt="Logo"
-                  style={{
-                    height: logoSizeMap[logo.size],
-                    width: "auto",
-                    objectFit: "contain",
-                    marginBottom: "12px",
-                  }}
-                />
-              )}
+      {sections.header?.enabled && (
+        <div
+          className={cn(
+            "flex items-start mb-6",
+            logo.position === "center" && "justify-center",
+            logo.position === "right" && "justify-end"
+          )}
+          style={{ marginBottom: `${spacing.sectionGap}px` }}
+        >
+          <div>
+            {logo.enabled && (
               <div
                 style={{
-                  fontFamily: typography.heading,
-                  fontSize: `${typography.size.heading}px`,
+                  fontSize: logoSizeMap[logo.size as keyof typeof logoSizeMap],
                   fontWeight: "bold",
                   color: colors.primary,
                   marginBottom: "8px",
                 }}
               >
-                INVOICE
+                🏢 {templateName}
               </div>
-              <div
-                style={{
-                  fontSize: `${typography.size.small}px`,
-                  color: colors.textSecondary,
-                }}
-              >
-                <div style={{ fontWeight: "600", color: colors.text }}>
-                  Your Company Name
-                </div>
-                <div>123 Business Street</div>
-                <div>City, State 12345</div>
-                <div>contact@company.com | (555) 123-4567</div>
-              </div>
+            )}
+            <div
+              style={{
+                fontSize: `${fonts.size.heading}px`,
+                fontWeight: "bold",
+                fontFamily: fonts.heading,
+                color: colors.primary,
+              }}
+            >
+              INVOICE
+            </div>
+            <div
+              style={{
+                fontSize: `${fonts.size.small}px`,
+                color: colors.textSecondary,
+                marginTop: "8px",
+              }}
+            >
+              <div>Your Company Name</div>
+              <div>123 Business Street</div>
+              <div>City, State 12345</div>
+              <div>contact@company.com</div>
             </div>
           </div>
         </div>
       )}
 
-      <Separator
-        style={{
-          backgroundColor: borders.enabled ? colors.border : "transparent",
-          height: borders.enabled ? `${borders.width}px` : "0",
-          marginBottom: `${spacing.sectionGap}px`,
-        }}
-      />
+      {advanced?.showBorders && (
+        <Separator
+          style={{
+            borderColor: colors.border,
+            marginBottom: `${spacing.sectionGap}px`,
+          }}
+        />
+      )}
 
-      {/* Invoice Details */}
-      <div
-        className="grid grid-cols-2 gap-4"
-        style={{ marginBottom: `${spacing.sectionGap}px` }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: `${typography.size.small}px`,
-              fontWeight: "600",
-              color: colors.text,
-              marginBottom: "4px",
-            }}
-          >
-            Invoice Number:
-          </div>
-          <div
-            style={{
-              fontSize: `${typography.size.body}px`,
-              color: colors.textSecondary,
-            }}
-          >
-            INV-2024-001
-          </div>
-        </div>
-        <div>
-          <div
-            style={{
-              fontSize: `${typography.size.small}px`,
-              fontWeight: "600",
-              color: colors.text,
-              marginBottom: "4px",
-            }}
-          >
-            Date:
-          </div>
-          <div
-            style={{
-              fontSize: `${typography.size.body}px`,
-              color: colors.textSecondary,
-            }}
-          >
-            {new Date().toLocaleDateString()}
-          </div>
-        </div>
-        <div>
-          <div
-            style={{
-              fontSize: `${typography.size.small}px`,
-              fontWeight: "600",
-              color: colors.text,
-              marginBottom: "4px",
-            }}
-          >
-            Due Date:
-          </div>
-          <div
-            style={{
-              fontSize: `${typography.size.body}px`,
-              color: colors.textSecondary,
-            }}
-          >
-            {new Date(
-              Date.now() + 30 * 24 * 60 * 60 * 1000
-            ).toLocaleDateString()}
-          </div>
-        </div>
-        <div>
-          <div
-            style={{
-              fontSize: `${typography.size.small}px`,
-              fontWeight: "600",
-              color: colors.text,
-              marginBottom: "4px",
-            }}
-          >
-            Payment Terms:
-          </div>
-          <div
-            style={{
-              fontSize: `${typography.size.body}px`,
-              color: colors.textSecondary,
-            }}
-          >
-            {defaults?.paymentTerms || "Net 30"}
-          </div>
-        </div>
-      </div>
-
-      {/* Bill To Section */}
-      {sections.billTo.enabled && (
+      {/* Invoice Info Section */}
+      {sections.invoiceInfo?.enabled && (
         <div style={{ marginBottom: `${spacing.sectionGap}px` }}>
           <div
             style={{
-              fontSize: `${typography.size.subheading}px`,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: `${spacing.elementGap}px`,
+              fontSize: `${fonts.size.body}px`,
+            }}
+          >
+            <div>
+              <span style={{ fontWeight: "600", color: colors.text }}>
+                Invoice Number:
+              </span>{" "}
+              <span style={{ color: colors.textSecondary }}>INV-001</span>
+            </div>
+            <div>
+              <span style={{ fontWeight: "600", color: colors.text }}>
+                Date:
+              </span>{" "}
+              <span style={{ color: colors.textSecondary }}>
+                {new Date().toLocaleDateString()}
+              </span>
+            </div>
+            <div>
+              <span style={{ fontWeight: "600", color: colors.text }}>
+                Due Date:
+              </span>{" "}
+              <span style={{ color: colors.textSecondary }}>
+                {new Date(
+                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                ).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bill To Section */}
+      {sections.billTo?.enabled && (
+        <div style={{ marginBottom: `${spacing.sectionGap}px` }}>
+          <div
+            style={{
+              fontSize: `${fonts.size.subheading}px`,
               fontWeight: "600",
               color: colors.primary,
-              marginBottom: "8px",
+              marginBottom: `${spacing.elementGap}px`,
             }}
           >
             Bill To:
           </div>
           <div
             style={{
-              fontSize: `${typography.size.body}px`,
+              fontSize: `${fonts.size.body}px`,
               color: colors.textSecondary,
             }}
           >
@@ -221,22 +175,22 @@ export function LivePreview({
       )}
 
       {/* Items Section */}
-      {sections.items.enabled && (
+      {sections.items?.enabled && (
         <div style={{ marginBottom: `${spacing.sectionGap}px` }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr
                 style={{
-                  borderBottom: borders.enabled
-                    ? `${borders.width}px ${borders.style} ${colors.border}`
+                  borderBottom: advanced?.showBorders
+                    ? `2px ${advanced?.borderStyle || "solid"} ${colors.border}`
                     : "none",
                 }}
               >
                 <th
                   style={{
                     textAlign: "left",
-                    padding: `${spacing.itemGap}px 0`,
-                    fontSize: `${typography.size.body}px`,
+                    padding: `${spacing.elementGap}px 0`,
+                    fontSize: `${fonts.size.body}px`,
                     fontWeight: "600",
                     color: colors.text,
                   }}
@@ -246,8 +200,8 @@ export function LivePreview({
                 <th
                   style={{
                     textAlign: "right",
-                    padding: `${spacing.itemGap}px 0`,
-                    fontSize: `${typography.size.body}px`,
+                    padding: `${spacing.elementGap}px 0`,
+                    fontSize: `${fonts.size.body}px`,
                     fontWeight: "600",
                     color: colors.text,
                   }}
@@ -257,8 +211,8 @@ export function LivePreview({
                 <th
                   style={{
                     textAlign: "right",
-                    padding: `${spacing.itemGap}px 0`,
-                    fontSize: `${typography.size.body}px`,
+                    padding: `${spacing.elementGap}px 0`,
+                    fontSize: `${fonts.size.body}px`,
                     fontWeight: "600",
                     color: colors.text,
                   }}
@@ -268,8 +222,8 @@ export function LivePreview({
                 <th
                   style={{
                     textAlign: "right",
-                    padding: `${spacing.itemGap}px 0`,
-                    fontSize: `${typography.size.body}px`,
+                    padding: `${spacing.elementGap}px 0`,
+                    fontSize: `${fonts.size.body}px`,
                     fontWeight: "600",
                     color: colors.text,
                   }}
@@ -292,15 +246,17 @@ export function LivePreview({
                 <tr
                   key={idx}
                   style={{
-                    borderBottom: borders.enabled
-                      ? `${borders.width}px ${borders.style} ${colors.border}`
+                    borderBottom: advanced?.showBorders
+                      ? `1px ${advanced?.borderStyle || "solid"} ${
+                          colors.border
+                        }`
                       : "none",
                   }}
                 >
                   <td
                     style={{
-                      padding: `${spacing.itemGap}px 0`,
-                      fontSize: `${typography.size.body}px`,
+                      padding: `${spacing.elementGap}px 0`,
+                      fontSize: `${fonts.size.body}px`,
                       color: colors.textSecondary,
                     }}
                   >
@@ -309,8 +265,8 @@ export function LivePreview({
                   <td
                     style={{
                       textAlign: "right",
-                      padding: `${spacing.itemGap}px 0`,
-                      fontSize: `${typography.size.body}px`,
+                      padding: `${spacing.elementGap}px 0`,
+                      fontSize: `${fonts.size.body}px`,
                       color: colors.textSecondary,
                     }}
                   >
@@ -319,8 +275,8 @@ export function LivePreview({
                   <td
                     style={{
                       textAlign: "right",
-                      padding: `${spacing.itemGap}px 0`,
-                      fontSize: `${typography.size.body}px`,
+                      padding: `${spacing.elementGap}px 0`,
+                      fontSize: `${fonts.size.body}px`,
                       color: colors.textSecondary,
                     }}
                   >
@@ -329,8 +285,8 @@ export function LivePreview({
                   <td
                     style={{
                       textAlign: "right",
-                      padding: `${spacing.itemGap}px 0`,
-                      fontSize: `${typography.size.body}px`,
+                      padding: `${spacing.elementGap}px 0`,
+                      fontSize: `${fonts.size.body}px`,
                       color: colors.text,
                       fontWeight: "600",
                     }}
@@ -345,7 +301,7 @@ export function LivePreview({
       )}
 
       {/* Summary Section */}
-      {sections.summary.enabled && (
+      {sections.summary?.enabled && (
         <div
           className="flex justify-end"
           style={{ marginBottom: `${spacing.sectionGap}px` }}
@@ -353,11 +309,11 @@ export function LivePreview({
           <div style={{ minWidth: "250px" }}>
             <div
               className="flex justify-between"
-              style={{ marginBottom: "8px" }}
+              style={{ marginBottom: `${spacing.elementGap}px` }}
             >
               <span
                 style={{
-                  fontSize: `${typography.size.body}px`,
+                  fontSize: `${fonts.size.body}px`,
                   color: colors.textSecondary,
                 }}
               >
@@ -365,9 +321,8 @@ export function LivePreview({
               </span>
               <span
                 style={{
-                  fontSize: `${typography.size.body}px`,
+                  fontSize: `${fonts.size.body}px`,
                   color: colors.text,
-                  fontWeight: "600",
                 }}
               >
                 $9,750.00
@@ -375,11 +330,11 @@ export function LivePreview({
             </div>
             <div
               className="flex justify-between"
-              style={{ marginBottom: "8px" }}
+              style={{ marginBottom: `${spacing.elementGap}px` }}
             >
               <span
                 style={{
-                  fontSize: `${typography.size.body}px`,
+                  fontSize: `${fonts.size.body}px`,
                   color: colors.textSecondary,
                 }}
               >
@@ -387,27 +342,26 @@ export function LivePreview({
               </span>
               <span
                 style={{
-                  fontSize: `${typography.size.body}px`,
+                  fontSize: `${fonts.size.body}px`,
                   color: colors.text,
-                  fontWeight: "600",
                 }}
               >
                 $975.00
               </span>
             </div>
-            <Separator
+            <div
               style={{
-                backgroundColor: borders.enabled
-                  ? colors.border
+                borderTop: advanced?.showBorders
+                  ? `2px ${advanced?.borderStyle || "solid"} ${colors.border}`
                   : "transparent",
-                height: borders.enabled ? `${borders.width}px` : "0",
-                marginBottom: "8px",
+                marginBottom: `${spacing.elementGap}px`,
+                paddingTop: `${spacing.elementGap}px`,
               }}
             />
             <div className="flex justify-between">
               <span
                 style={{
-                  fontSize: `${typography.size.subheading}px`,
+                  fontSize: `${fonts.size.subheading}px`,
                   color: colors.primary,
                   fontWeight: "bold",
                 }}
@@ -416,7 +370,7 @@ export function LivePreview({
               </span>
               <span
                 style={{
-                  fontSize: `${typography.size.subheading}px`,
+                  fontSize: `${fonts.size.subheading}px`,
                   color: colors.primary,
                   fontWeight: "bold",
                 }}
@@ -428,51 +382,73 @@ export function LivePreview({
         </div>
       )}
 
-      {/* Notes Section */}
-      {sections.notes.enabled && defaults?.notes && (
-        <div style={{ marginBottom: `${spacing.sectionGap}px` }}>
-          <div
-            style={{
-              fontSize: `${typography.size.body}px`,
-              fontWeight: "600",
-              color: colors.text,
-              marginBottom: "8px",
-            }}
-          >
-            Notes:
-          </div>
-          <div
-            style={{
-              fontSize: `${typography.size.small}px`,
-              color: colors.textSecondary,
-            }}
-          >
-            {defaults.notes}
-          </div>
+      {/* Footer/Notes Section */}
+      {sections.footer?.enabled && (
+        <div style={{ marginTop: `${spacing.sectionGap}px` }}>
+          {defaults?.notes && (
+            <div style={{ marginBottom: `${spacing.sectionGap}px` }}>
+              <div
+                style={{
+                  fontSize: `${fonts.size.body}px`,
+                  fontWeight: "600",
+                  color: colors.text,
+                  marginBottom: `${spacing.elementGap}px`,
+                }}
+              >
+                Notes:
+              </div>
+              <div
+                style={{
+                  fontSize: `${fonts.size.small}px`,
+                  color: colors.textSecondary,
+                }}
+              >
+                {defaults.notes}
+              </div>
+            </div>
+          )}
+
+          {defaults?.terms && (
+            <div>
+              <div
+                style={{
+                  fontSize: `${fonts.size.body}px`,
+                  fontWeight: "600",
+                  color: colors.text,
+                  marginBottom: `${spacing.elementGap}px`,
+                }}
+              >
+                Terms & Conditions:
+              </div>
+              <div
+                style={{
+                  fontSize: `${fonts.size.small}px`,
+                  color: colors.textSecondary,
+                }}
+              >
+                {defaults.terms}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Terms Section */}
-      {sections.footer.enabled && defaults?.terms && (
-        <div style={{ marginTop: `${spacing.sectionGap}px` }}>
-          <div
-            style={{
-              fontSize: `${typography.size.body}px`,
-              fontWeight: "600",
-              color: colors.text,
-              marginBottom: "8px",
-            }}
-          >
-            Terms & Conditions:
-          </div>
-          <div
-            style={{
-              fontSize: `${typography.size.small}px`,
-              color: colors.textSecondary,
-            }}
-          >
-            {defaults.terms}
-          </div>
+      {/* Watermark if enabled */}
+      {advanced?.showWatermark && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%) rotate(-45deg)",
+            fontSize: "72px",
+            fontWeight: "bold",
+            color: "rgba(0, 0, 0, 0.05)",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          {advanced.watermarkText || "DRAFT"}
         </div>
       )}
     </div>

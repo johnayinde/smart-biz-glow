@@ -1,31 +1,54 @@
 // src/components/templates/builder/LayoutControls.tsx
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
 
 interface LayoutControlsProps {
-  layout: {
-    pageSize: "A4" | "Letter";
-    orientation: "portrait" | "landscape";
-    margins: {
-      top: number;
-      right: number;
-      bottom: number;
-      left: number;
-    };
-  };
-  onChange: (layout: any) => void;
+  layout: "classic" | "modern" | "minimal" | "creative";
+  paperSize: "A4" | "Letter" | "Legal";
+  orientation: "portrait" | "landscape";
+  onLayoutChange: (layout: string) => void;
+  onPaperSizeChange: (size: string) => void;
+  onOrientationChange: (orientation: string) => void;
 }
 
-export function LayoutControls({ layout, onChange }: LayoutControlsProps) {
+export function LayoutControls({
+  layout,
+  paperSize,
+  orientation,
+  onLayoutChange,
+  onPaperSizeChange,
+  onOrientationChange,
+}: LayoutControlsProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label>Page Size</Label>
+        <Label>Layout</Label>
         <RadioGroup
-          value={layout.pageSize}
-          onValueChange={(pageSize: "A4" | "Letter") =>
-            onChange({ ...layout, pageSize })
+          value={layout}
+          onValueChange={(
+            layout: "classic" | "modern" | "minimal" | "creative"
+          ) => onLayoutChange(layout)}
+        >
+          {["classic", "modern", "minimal", "creative"].map((type) => (
+            <div key={type} className="flex items-center space-x-2">
+              <RadioGroupItem value={type} id={type} />
+              <Label
+                htmlFor={type}
+                className="font-normal cursor-pointer capitalize"
+              >
+                {type}
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Paper Size</Label>
+        <RadioGroup
+          value={paperSize}
+          onValueChange={(size: "A4" | "Letter" | "Legal") =>
+            onPaperSizeChange(size)
           }
         >
           <div className="flex items-center space-x-2">
@@ -40,15 +63,21 @@ export function LayoutControls({ layout, onChange }: LayoutControlsProps) {
               Letter (8.5 × 11 in)
             </Label>
           </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="Legal" id="legal" />
+            <Label htmlFor="legal" className="font-normal cursor-pointer">
+              Legal (8.5 × 14 in)
+            </Label>
+          </div>
         </RadioGroup>
       </div>
 
       <div className="space-y-2">
         <Label>Orientation</Label>
         <RadioGroup
-          value={layout.orientation}
+          value={orientation}
           onValueChange={(orientation: "portrait" | "landscape") =>
-            onChange({ ...layout, orientation })
+            onOrientationChange(orientation)
           }
         >
           <div className="flex items-center space-x-2">
@@ -64,32 +93,6 @@ export function LayoutControls({ layout, onChange }: LayoutControlsProps) {
             </Label>
           </div>
         </RadioGroup>
-      </div>
-
-      <div className="space-y-4 pt-4 border-t">
-        <Label>Margins</Label>
-        {(["top", "right", "bottom", "left"] as const).map((side) => (
-          <div key={side} className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="capitalize text-sm">{side}</Label>
-              <span className="text-sm text-muted-foreground">
-                {layout.margins[side]}px
-              </span>
-            </div>
-            <Slider
-              value={[layout.margins[side]]}
-              onValueChange={([value]) =>
-                onChange({
-                  ...layout,
-                  margins: { ...layout.margins, [side]: value },
-                })
-              }
-              min={10}
-              max={80}
-              step={5}
-            />
-          </div>
-        ))}
       </div>
     </div>
   );

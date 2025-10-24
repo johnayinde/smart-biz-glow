@@ -78,10 +78,12 @@ export function ColorPicker({ colors, onChange }: ColorPickerProps) {
               variant="outline"
               size="sm"
               onClick={() => onChange(preset.colors)}
-              className="justify-start"
+              className="w-full h-9 px-2 justify-start" // <- fixed height + full width
             >
-              <div className="flex items-center gap-2">
-                <div className="flex gap-0.5">
+              <div className="flex items-center gap-2 min-w-0">
+                {" "}
+                {/* min-w-0 lets truncate work */}
+                <div className="flex gap-0.5 shrink-0 w-10 justify-start">
                   <div
                     className="w-3 h-3 rounded"
                     style={{ backgroundColor: preset.colors.primary }}
@@ -95,7 +97,8 @@ export function ColorPicker({ colors, onChange }: ColorPickerProps) {
                     style={{ backgroundColor: preset.colors.accent }}
                   />
                 </div>
-                <span className="text-xs">{preset.name}</span>
+                <span className="text-xs truncate">{preset.name}</span>{" "}
+                {/* no wrapping */}
               </div>
             </Button>
           ))}

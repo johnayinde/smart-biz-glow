@@ -41,40 +41,39 @@ export interface Section {
 
 export interface DesignConfig {
   colors: ColorScheme;
-  typography: Typography;
+  // typography: Typography;
   logo: LogoConfig;
-  layout: {
-    pageSize: string;
-    // pageSize: "A4" | "Letter";
-    // orientation: "portrait" | "landscape";
-    orientation: string;
-    margins: {
-      top: number;
-      right: number;
-      bottom: number;
-      left: number;
-    };
-  };
+
+  layout: "classic" | "modern" | "minimal" | "creative";
+  paperSize: "A4" | "Letter" | "Legal";
+  orientation: "portrait" | "landscape";
+  fonts: Typography;
+  //
+
   sections: {
     header: Section;
     billTo: Section;
     items: Section;
     summary: Section;
     footer: Section;
-    notes: Section;
+    invoiceInfo: Section; // Added
   };
   spacing: {
-    lineHeight: number;
     sectionGap: number;
-    itemGap: number;
+    elementGap: number; // Changed from itemGap
+    padding: number;
   };
-  borders: {
-    enabled: boolean;
-    width: number;
-    // style: "solid" | "dashed" | "dotted";
-    style: string;
-    color: string;
+  advanced: {
+    // Changed from borders
+    showWatermark: boolean;
+    watermarkText: string;
+    showPageNumbers: boolean;
+    showBorders: boolean;
+    borderStyle: "solid" | "dashed" | "none";
+    roundedCorners: boolean;
   };
+
+  //
 }
 
 export interface TemplateDefaults {
@@ -98,6 +97,11 @@ export interface Template {
   thumbnail?: string;
   createdAt: string;
   updatedAt: string;
+
+  //
+
+  previewImage?: string;
+  category?: string;
 }
 
 export interface CreateTemplateDto {
